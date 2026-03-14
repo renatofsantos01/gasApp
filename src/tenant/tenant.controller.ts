@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Req, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { TenantService } from './tenant.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -10,7 +10,7 @@ export class TenantController {
   async getBySubdomain(@Param('subdomain') subdomain: string) {
     const tenant = await this.tenantService.findBySubdomain(subdomain);
     if (!tenant) {
-      return { error: 'Tenant not found' };
+      throw new NotFoundException('Tenant not found');
     }
     return {
       id: tenant.id,
@@ -26,10 +26,14 @@ export class TenantController {
   @UseGuards(JwtAuthGuard)
   @Get('config')
   async getConfig(@Req() req: any) {
-    const tenantId = req.user?.tenantid;
+    const tenantId = req.user?.tenantId;
     if (!tenantId) {
-      return { error: 'No tenant associated with user' };
+      throw new ForbiddenException('No tenant associated with user');
     }
-    return this.tenantService.getConfig(tenantId);
+    const config = await this.tenantService.getConfig(tenantId);
+    if (!config) {
+      throw new NotFoundException('Tenant not found');
+    }
+    return config;
   }
 }

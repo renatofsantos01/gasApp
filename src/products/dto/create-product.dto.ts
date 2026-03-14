@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsInt, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsInt, Min, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -7,9 +7,8 @@ export class CreateProductDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'Botijões', description: 'Botijões, Água, Acessórios, or Serviços' })
-  @IsString()
-  @IsNotEmpty()
+  @ApiProperty({ example: 'Botijões', enum: ['Botijões', 'Água', 'Acessórios', 'Serviços'] })
+  @IsIn(['Botijões', 'Água', 'Acessórios', 'Serviços'])
   category: string;
 
   @ApiProperty({ example: 'Botijão de gás de 13kg' })

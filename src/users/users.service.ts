@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -85,7 +85,7 @@ export class UsersService {
     }
 
     if (client.role !== 'client') {
-      throw new NotFoundException('User is not a client');
+      throw new BadRequestException('User is not a client');
     }
 
     return {
