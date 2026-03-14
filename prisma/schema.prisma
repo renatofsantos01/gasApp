@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/distribuidora_gas_app/nodejs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Multi-Tenant: Tabela de Distribuidoras (Tenants)
+model tenant {
+  id             String    @id @default(uuid())
+  companyname    String    // Nome da empresa: "Distribuidora ABC Ltda"
+  appname        String    // Nome no app: "ABC Gás"
+  subdomain      String    @unique // "abc" → cliente acessa via código/subdomain
+  customdomain   String?   // "app.distribuidoraabc.com.br" (opcional)
+  logourl        String?   // URL do logo no S3
+  splashscreenurl String?  // URL da splash screen no S3
+  primarycolor   String    @default("#FF5722") // Cor primária hex
+  secondarycolor String    @default("#2196F3") // Cor secundária hex
+  email          String    // Email de contato da distribuidora
+  phone          String?   // Telefone da distribuidora
+  isactive       Boolean   @default(true) // Ativar/desativar distribuidora
+  createdat      DateTime  @default(now())
+  updatedat      DateTime  @updatedAt
+  
+  // Relações
+  users          user[]
+  products       product[]
+  orders         order[]
+  
+  @@index([subdomain])
+}
+
+model user {
+  id        String    @id @default(uuid())
+  tenantid  String?   // NULL apenas para superadmin
+  tenant    tenant?   @relation(fields: [tenantid], references: [id], onDelete: Cascade)
+  name      String
+  email     String    
+  password  String
+  phone     String?
+  role      String    // 'superadmin' (gerencia tenants), 'admin' (admin da distribuidora), 'client' (cliente final)
+  createdat DateTime  @default(now())
+  addresses address[]
+  orders    order[]
+  
+  @@unique([email, tenantid]) // Email pode repetir entre tenants, mas não dentro do mesmo tenant
+  @@index([tenantid])
+  @@index([email])
+}
+
+model address {
+  id           String  @id @default(uuid())
+  userid       String
+  user         user    @relation(fields: [userid], references: [id], onDelete: Cascade)
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipcode      String
+  isdefault    Boolean @default(false)
+  orders       order[]
+  
+  @@index([userid])
+}
+
+model product {
+  id          String      @id @default(uuid())
+  tenantid    String      // CRÍTICO: Cada produto pertence a uma distribuidora
+  tenant      tenant      @relation(fields: [tenantid], references: [id], onDelete: Cascade)
+  name        String
+  category    String      // 'Botijões', 'Água', 'Acessórios', 'Serviços'
+  description String
+  price       Float
+  imageurl    String
+  stock       Int         @default(0)
+  createdat   DateTime    @default(now())
+  orderitems  orderitem[]
+  
+  @@index([tenantid])
+  @@index([category])
+}
+
+model order {
+  id            String      @id @default(uuid())
+  tenantid      String      // CRÍTICO: Cada pedido pertence a uma distribuidora
+  tenant        tenant      @relation(fields: [tenantid], references: [id], onDelete: Cascade)
+  userid        String
+  user          user        @relation(fields: [userid], references: [id])
+  addressid     String
+  address       address     @relation(fields: [addressid], references: [id])
+  totalamount   Float
+  paymentmethod String      // 'Dinheiro', 'Pix', 'Cartão'
+  status        String      @default("Pendente") // 'Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue', 'Cancelado'
+  observations  String?
+  cancelreason  String?
+  createdat     DateTime    @default(now())
+  updatedat     DateTime    @updatedAt
+  items         orderitem[]
+  
+  @@index([tenantid])
+  @@index([userid])
+  @@index([status])
+}
+
+model orderitem {
+  id        String  @id @default(uuid())
+  orderid   String
+  order     order   @relation(fields: [orderid], references: [id], onDelete: Cascade)
+  productid String
+  product   product @relation(fields: [productid], references: [id])
+  quantity  Int
+  unitprice Float
+  subtotal  Float
+  
+  @@index([orderid])
+  @@index([productid])
+}
