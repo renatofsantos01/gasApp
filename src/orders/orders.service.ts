@@ -104,8 +104,8 @@ export class OrdersService {
     };
   }
 
-  async findAll(userId: string, userRole: string) {
-    const where = userRole === 'admin' ? {} : { userid: userId };
+  async findAll(userId: string, userRole: string, tenantId: string) {
+    const where = userRole === 'admin' ? { tenantid: tenantId } : { userid: userId };
 
     const orders = await this.prisma.order.findMany({
       where,
@@ -121,7 +121,11 @@ export class OrdersService {
           select: {
             street: true,
             number: true,
+            complement: true,
+            neighborhood: true,
             city: true,
+            state: true,
+            zipcode: true,
           },
         },
         items: {
@@ -129,6 +133,8 @@ export class OrdersService {
             product: {
               select: {
                 name: true,
+                imageurl: true,
+                price: true,
               },
             },
           },
@@ -149,9 +155,13 @@ export class OrdersService {
       observations: order.observations,
       createdAt: order.createdat,
       items: order.items.map((item: any) => ({
-        product: item.product,
+        product: {
+          name: item.product.name,
+          imageUrl: item.product.imageurl,
+          price: item.product.price,
+        },
         quantity: item.quantity,
-        price: item.price,
+        price: item.unitprice,
         subtotal: item.subtotal,
       })),
     }));

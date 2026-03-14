@@ -5,9 +5,9 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAllClients() {
+  async findAllClients(tenantId: string) {
     const clients = await this.prisma.user.findMany({
-      where: { role: 'client' },
+      where: { role: 'client', tenantid: tenantId },
       select: {
         id: true,
         name: true,
@@ -45,7 +45,7 @@ export class UsersService {
     }));
   }
 
-  async findClientById(id: string) {
+  async findClientById(id: string, tenantId: string) {
     const client = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -54,6 +54,7 @@ export class UsersService {
         email: true,
         phone: true,
         role: true,
+        tenantid: true,
         createdat: true,
         addresses: {
           select: {
@@ -84,7 +85,7 @@ export class UsersService {
       throw new NotFoundException('Client not found');
     }
 
-    if (client.role !== 'client') {
+    if (client.role !== 'client' || client.tenantid !== tenantId) {
       throw new BadRequestException('User is not a client');
     }
 
@@ -104,17 +105,22 @@ export class UsersService {
     };
   }
 
-  async findUserOrders(userId: string) {
+  async findUserOrders(userId: string, tenantId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      select: { tenantid: true },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    if (user.tenantid !== tenantId) {
+      throw new NotFoundException('User not found');
+    }
+
     const orders = await this.prisma.order.findMany({
-      where: { userid: userId },
+      where: { userid: userId, tenantid: tenantId },
       select: {
         id: true,
         totalamount: true,

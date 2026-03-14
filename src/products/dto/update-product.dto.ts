@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsInt, Min, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProductDto {
@@ -7,8 +7,8 @@ export class UpdateProductDto {
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'Botijões' })
-  @IsString()
+  @ApiPropertyOptional({ example: 'Botijões', enum: ['Botijões', 'Água', 'Acessórios', 'Serviços'] })
+  @IsIn(['Botijões', 'Água', 'Acessórios', 'Serviços'])
   @IsOptional()
   category?: string;
 

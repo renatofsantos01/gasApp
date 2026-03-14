@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,8 +15,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all clients (Admin only)' })
   @ApiResponse({ status: 200, description: 'Clients retrieved successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  async findAllClients() {
-    return this.usersService.findAllClients();
+  async findAllClients(@Request() req: any) {
+    return this.usersService.findAllClients(req.user.tenantId);
   }
 
   @Get('clients/:id')
@@ -24,8 +24,8 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Client details retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Client not found' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  async findClientById(@Param('id') id: string) {
-    return this.usersService.findClientById(id);
+  async findClientById(@Request() req: any, @Param('id') id: string) {
+    return this.usersService.findClientById(id, req.user.tenantId);
   }
 
   @Get(':id/orders')
@@ -33,7 +33,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User orders retrieved successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  async findUserOrders(@Param('id') id: string) {
-    return this.usersService.findUserOrders(id);
+  async findUserOrders(@Request() req: any, @Param('id') id: string) {
+    return this.usersService.findUserOrders(id, req.user.tenantId);
   }
 }

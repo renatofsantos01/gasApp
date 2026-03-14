@@ -26,7 +26,7 @@ export class OrdersController {
   @ApiOperation({ summary: 'Get orders (client: own orders, admin: all orders)' })
   @ApiResponse({ status: 200, description: 'Orders retrieved successfully' })
   async findAll(@Request() req: any) {
-    return this.ordersService.findAll(req.user.userId, req.user.role);
+    return this.ordersService.findAll(req.user.userId, req.user.role, req.user.tenantId);
   }
 
   @Get(':id')
