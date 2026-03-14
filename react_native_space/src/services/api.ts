@@ -23,7 +23,7 @@ import {
   Client,
 } from '../types';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://dc071db80.na105.preview.abacusai.app/';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 const TOKEN_KEY = 'auth_token';
 
