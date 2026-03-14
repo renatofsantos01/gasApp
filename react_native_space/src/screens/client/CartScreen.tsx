@@ -1,0 +1,243 @@
+import React from 'react';
+import { View, StyleSheet, FlatList, Image, Alert } from 'react-native';
+import { Text, Button, IconButton, Divider } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ClientTabParamList } from '../../navigation/ClientNavigator';
+import { useCart } from '../../contexts/CartContext';
+import { CartItem } from '../../types';
+import { formatCurrency } from '../../utils/format';
+import { EmptyState } from '../../components/EmptyState';
+import { theme } from '../../theme';
+
+type CartScreenProps = {
+  navigation: NativeStackNavigationProp<ClientTabParamList, 'Cart'>;
+};
+
+export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
+  const { items, total, updateQuantity, removeItem } = useCart();
+
+  const handleCheckout = () => {
+    if ((items?.length ?? 0) === 0) {
+      Alert.alert('Aviso', 'Adicione produtos ao carrinho antes de finalizar o pedido');
+      return;
+    }
+    navigation.navigate('Checkout');
+  };
+
+  const renderCartItem = ({ item }: { item: CartItem }) => {
+    const subtotal = (item?.product?.price ?? 0) * (item?.quantity ?? 0);
+
+    return (
+      <View style={styles.cartItem}>
+        <Image
+          source={{ uri: item?.product?.imageUrl || 'https://via.placeholder.com/80' }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+        <View style={styles.productInfo}>
+          <Text variant="titleMedium" numberOfLines={2} style={styles.productName}>
+            {item?.product?.name ?? ''}
+          </Text>
+          <Text variant="bodyMedium" style={styles.productPrice}>
+            {formatCurrency(item?.product?.price ?? 0)}
+          </Text>
+          <View style={styles.quantityContainer}>
+            <IconButton
+              icon="minus"
+              size={20}
+              onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) - 1)}
+            />
+            <Text variant="titleMedium" style={styles.quantity}>
+              {item?.quantity ?? 0}
+            </Text>
+            <IconButton
+              icon="plus"
+              size={20}
+              onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) + 1)}
+              disabled={(item?.product?.stock ?? 0) <= (item?.quantity ?? 0)}
+            />
+          </View>
+        </View>
+        <View style={styles.itemActions}>
+          <Text variant="titleMedium" style={styles.subtotal}>
+            {formatCurrency(subtotal)}
+          </Text>
+          <IconButton
+            icon="delete"
+            size={20}
+            iconColor={theme.colors.error}
+            onPress={() => {
+              Alert.alert(
+                'Remover item',
+                `Deseja remover ${item?.product?.name} do carrinho?`,
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Remover', onPress: () => removeItem(item?.product?.id ?? ''), style: 'destructive' },
+                ]
+              );
+            }}
+          />
+        </View>
+      </View>
+    );
+  };
+
+  if ((items?.length ?? 0) === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Text variant="headlineMedium" style={styles.title}>
+            Carrinho
+          </Text>
+        </View>
+        <EmptyState
+          icon="cart-outline"
+          title="Carrinho vazio"
+          message="Adicione produtos para continuar"
+        />
+        <View style={styles.emptyActions}>
+          <Button
+            mode="contained"
+            onPress={() => navigation.goBack()}
+            contentStyle={styles.buttonContent}
+          >
+            Ver Produtos
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.title}>
+          Carrinho
+        </Text>
+      </View>
+
+      <FlatList
+        data={items}
+        renderItem={renderCartItem}
+        keyExtractor={(item) => item?.product?.id ?? ''}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <Divider style={styles.divider} />}
+      />
+
+      <View style={styles.footer}>
+        <View style={styles.totalContainer}>
+          <Text variant="titleLarge">Total:</Text>
+          <Text variant="headlineMedium" style={styles.totalAmount}>
+            {formatCurrency(total ?? 0)}
+          </Text>
+        </View>
+        <Button
+          mode="contained"
+          onPress={handleCheckout}
+          contentStyle={styles.buttonContent}
+          style={styles.checkoutButton}
+        >
+          Finalizar Pedido
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.goBack()}
+          style={styles.continueButton}
+        >
+          Continuar Comprando
+        </Button>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  header: {
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  title: {
+    fontWeight: 'bold',
+  },
+  listContent: {
+    paddingBottom: 16,
+  },
+  cartItem: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+  },
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  productInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  productName: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  productPrice: {
+    color: '#757575',
+    marginBottom: 8,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quantity: {
+    marginHorizontal: 8,
+    minWidth: 30,
+    textAlign: 'center',
+  },
+  itemActions: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  subtotal: {
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  divider: {
+    marginHorizontal: 16,
+  },
+  footer: {
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  totalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  totalAmount: {
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  checkoutButton: {
+    marginBottom: 8,
+  },
+  continueButton: {
+    marginBottom: 8,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  emptyActions: {
+    padding: 24,
+  },
+});
