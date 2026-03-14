@@ -50,6 +50,7 @@ export const AdminProductsScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [menuVisible, setMenuVisible] = useState<{[key: string]: boolean}>({});
+  const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -417,13 +418,32 @@ export const AdminProductsScreen: React.FC = () => {
               mode="outlined"
             />
 
-            <TextInput
-              label="Categoria"
-              value={formData?.category ?? ''}
-              onChangeText={(text) => setFormData({ ...formData, category: text })}
-              style={styles.input}
-              mode="outlined"
-            />
+            <Menu
+              visible={categoryMenuVisible}
+              onDismiss={() => setCategoryMenuVisible(false)}
+              anchor={
+                <TextInput
+                  label="Categoria"
+                  value={formData?.category ?? ''}
+                  style={styles.input}
+                  mode="outlined"
+                  editable={false}
+                  right={<TextInput.Icon icon="chevron-down" onPress={() => setCategoryMenuVisible(true)} />}
+                  onPressIn={() => setCategoryMenuVisible(true)}
+                />
+              }
+            >
+              {CATEGORIES.map((cat) => (
+                <Menu.Item
+                  key={cat}
+                  title={cat}
+                  onPress={() => {
+                    setFormData({ ...formData, category: cat });
+                    setCategoryMenuVisible(false);
+                  }}
+                />
+              ))}
+            </Menu>
 
             <TextInput
               label="Descrição"
