@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { AssignDelivererDto } from './dto/assign-deliverer.dto';
+import { DeliveryStatusDto } from './dto/delivery-status.dto';
 import { CouponsService } from '../coupons/coupons.service';
 
 @Injectable()
@@ -159,38 +161,29 @@ export class OrdersService {
   }
 
   async findAll(userId: string, userRole: string, tenantId: string) {
-    const where = userRole === 'admin' ? { tenantid: tenantId } : { userid: userId };
+    const where =
+      userRole === 'admin' || userRole === 'superadmin'
+        ? { tenantid: tenantId }
+        : { userid: userId };
 
     const orders = await this.prisma.order.findMany({
       where,
       include: {
         user: {
-          select: {
-            name: true,
-            email: true,
-            phone: true,
-          },
+          select: { name: true, email: true, phone: true },
+        },
+        deliverer: {
+          select: { id: true, name: true },
         },
         address: {
           select: {
-            street: true,
-            number: true,
-            complement: true,
-            neighborhood: true,
-            city: true,
-            state: true,
-            zipcode: true,
+            street: true, number: true, complement: true,
+            neighborhood: true, city: true, state: true, zipcode: true,
           },
         },
         items: {
           include: {
-            product: {
-              select: {
-                name: true,
-                imageurl: true,
-                price: true,
-              },
-            },
+            product: { select: { name: true, imageurl: true, price: true } },
           },
         },
       },
@@ -202,6 +195,8 @@ export class OrdersService {
       orderNumber: order.id.substring(0, 8).toUpperCase(),
       userId: order.userid,
       user: order.user,
+      delivererId: order.delivererid,
+      delivererName: order.deliverer?.name ?? null,
       address: order.address,
       totalAmount: order.totalamount,
       paymentMethod: order.paymentmethod,
@@ -353,5 +348,84 @@ export class OrdersService {
       cancelReason: updatedOrder.cancelreason,
       updatedAt: updatedOrder.updatedat,
     };
+  }
+
+  async assignDeliverer(orderId: string, dto: AssignDelivererDto, tenantId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.tenantid !== tenantId) throw new ForbiddenException('Not your tenant');
+
+    const deliverer = await this.prisma.user.findUnique({ where: { id: dto.delivererId } });
+    if (!deliverer || deliverer.role !== 'entregador' || deliverer.tenantid !== tenantId) {
+      throw new BadRequestException('Entregador inválido');
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { delivererid: dto.delivererId },
+      select: { id: true, delivererid: true, status: true },
+    });
+
+    return { id: updated.id, delivererId: updated.delivererid, status: updated.status };
+  }
+
+  async getMyDeliveries(delivererId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        delivererid: delivererId,
+        status: { notIn: ['Cancelado'] },
+      },
+      include: {
+        user: { select: { name: true, phone: true } },
+        address: {
+          select: {
+            street: true, number: true, complement: true,
+            neighborhood: true, city: true, state: true, zipcode: true,
+          },
+        },
+        items: {
+          include: {
+            product: { select: { name: true, price: true, imageurl: true } },
+          },
+        },
+      },
+      orderBy: { createdat: 'desc' },
+    });
+
+    return orders.map((order: any) => ({
+      id: order.id,
+      orderNumber: order.id.substring(0, 8).toUpperCase(),
+      status: order.status,
+      totalAmount: order.totalamount,
+      paymentMethod: order.paymentmethod,
+      observations: order.observations,
+      createdAt: order.createdat,
+      user: order.user,
+      address: order.address,
+      items: order.items.map((item: any) => ({
+        quantity: item.quantity,
+        unitPrice: item.unitprice,
+        subtotal: item.subtotal,
+        product: {
+          name: item.product.name,
+          price: item.product.price,
+          imageUrl: item.product.imageurl,
+        },
+      })),
+    }));
+  }
+
+  async updateDeliveryStatus(orderId: string, dto: DeliveryStatusDto, delivererId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.delivererid !== delivererId) throw new ForbiddenException('Not your delivery');
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: dto.status },
+      select: { id: true, status: true, updatedat: true },
+    });
+
+    return { id: updated.id, status: updated.status, updatedAt: updated.updatedat };
   }
 }

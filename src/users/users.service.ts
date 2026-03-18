@@ -105,6 +105,15 @@ export class UsersService {
     };
   }
 
+  async findAllDeliverers(tenantId: string) {
+    const deliverers = await this.prisma.user.findMany({
+      where: { role: 'entregador', tenantid: tenantId },
+      select: { id: true, name: true, email: true, phone: true },
+      orderBy: { name: 'asc' },
+    });
+    return deliverers;
+  }
+
   async findUserOrders(userId: string, tenantId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

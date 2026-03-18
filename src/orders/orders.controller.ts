@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { AssignDelivererDto } from './dto/assign-deliverer.dto';
+import { DeliveryStatusDto } from './dto/delivery-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
@@ -20,6 +22,13 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Address or product not found' })
   async create(@Request() req: any, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(req.user.userId, dto);
+  }
+
+  @Get('my-deliveries')
+  @ApiOperation({ summary: 'Get orders assigned to me (Entregador only)' })
+  async getMyDeliveries(@Request() req: any) {
+    if (req.user.role !== 'entregador') throw new ForbiddenException('Entregadores apenas');
+    return this.ordersService.getMyDeliveries(req.user.userId);
   }
 
   @Get()
@@ -56,5 +65,19 @@ export class OrdersController {
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
   async cancel(@Param('id') id: string, @Body() dto: CancelOrderDto) {
     return this.ordersService.cancel(id, dto);
+  }
+
+  @Patch(':id/assign')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Assign deliverer to order (Admin only)' })
+  async assignDeliverer(@Param('id') id: string, @Body() dto: AssignDelivererDto, @Request() req: any) {
+    return this.ordersService.assignDeliverer(id, dto, req.user.tenantId);
+  }
+
+  @Patch(':id/delivery-status')
+  @ApiOperation({ summary: 'Update delivery status (Entregador only)' })
+  async updateDeliveryStatus(@Param('id') id: string, @Body() dto: DeliveryStatusDto, @Request() req: any) {
+    if (req.user.role !== 'entregador') throw new ForbiddenException('Entregadores apenas');
+    return this.ordersService.updateDeliveryStatus(id, dto, req.user.userId);
   }
 }

@@ -50,11 +50,12 @@ model user {
   phoneverified               Boolean   @default(true)   // true por padrão para usuários existentes
   phoneverificationcode       String?
   phoneverificationexpiresat  DateTime?
-  role      String    // 'superadmin' (gerencia tenants), 'admin' (admin da distribuidora), 'client' (cliente final)
+  role      String    // 'superadmin', 'admin', 'client', 'entregador'
   createdat DateTime  @default(now())
-  addresses address[]
-  orders    order[]
-  
+  addresses       address[]
+  orders          order[]   @relation("UserOrders")
+  deliveredorders order[]   @relation("DelivererOrders")
+
   @@unique([email, tenantid]) // Email pode repetir entre tenants, mas não dentro do mesmo tenant
   @@index([tenantid])
   @@index([email])
@@ -99,7 +100,9 @@ model order {
   tenantid      String      // CRÍTICO: Cada pedido pertence a uma distribuidora
   tenant        tenant      @relation(fields: [tenantid], references: [id], onDelete: Cascade)
   userid        String
-  user          user        @relation(fields: [userid], references: [id])
+  user          user        @relation("UserOrders", fields: [userid], references: [id])
+  delivererid   String?
+  deliverer     user?       @relation("DelivererOrders", fields: [delivererid], references: [id])
   addressid     String
   address       address     @relation(fields: [addressid], references: [id])
   totalamount   Float

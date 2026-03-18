@@ -11,6 +11,12 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Get('deliverers')
+  @ApiOperation({ summary: 'Get all deliverers (Admin only)' })
+  async findAllDeliverers(@Request() req: any) {
+    return this.usersService.findAllDeliverers(req.user.tenantId);
+  }
+
   @Get('clients')
   @ApiOperation({ summary: 'Get all clients (Admin only)' })
   @ApiResponse({ status: 200, description: 'Clients retrieved successfully' })
