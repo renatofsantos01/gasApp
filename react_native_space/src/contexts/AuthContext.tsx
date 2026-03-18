@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from '../services/api';
+import { notificationsService } from '../services/notificationsService';
 import { User, LoginRequest, RegisterRequest } from '../types';
 import { TenantConfig, tenantService } from '../services/tenantService';
 
@@ -59,6 +60,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const registerPushToken = async () => {
+    try {
+      const token = await notificationsService.registerForPushNotifications();
+      if (token) await apiService.savePushToken(token);
+    } catch (e) {
+      console.warn('[Push] Falha ao registrar token:', e);
+    }
+  };
+
   const checkAuth = async () => {
     try {
       await loadTenantConfig();
@@ -66,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         const profile = await apiService.getProfile();
         setUser(profile);
+        registerPushToken();
       }
     } catch {
       await apiService.removeToken();
@@ -84,6 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const response = await apiService.login({ ...data, tenantId: tenantId || undefined });
     await apiService.saveToken(response?.token ?? '');
     setUser(response?.user ?? null);
+    registerPushToken();
   };
 
   const register = async (data: RegisterRequest) => {
@@ -91,6 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const response = await apiService.register({ ...data, tenantId });
     await apiService.saveToken(response?.token ?? '');
     setUser(response?.user ?? null);
+    registerPushToken();
   };
 
   const logout = async () => {

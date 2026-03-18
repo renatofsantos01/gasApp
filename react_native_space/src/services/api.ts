@@ -138,6 +138,10 @@ class ApiService {
     return response.data;
   }
 
+  async savePushToken(token: string): Promise<void> {
+    await this.api.patch('/auth/push-token', { token });
+  }
+
   // Products endpoints
   async getProducts(category?: string): Promise<Product[]> {
     const response = await this.api.get<Product[]>('/products', {

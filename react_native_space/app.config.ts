@@ -51,9 +51,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       versionCode: 1,
     },
     web: { favicon: './assets/favicon.png' },
-    plugins: ['expo-secure-store'],
+    plugins: [
+      'expo-secure-store',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/icon.png',
+          color: '#FF5722',
+          sounds: [],
+        },
+      ],
+    ],
     extra: {
-      eas: { projectId: '' }, // preencher após executar: eas init
+      eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? 'bf284fc2-a493-4ebf-acb0-de1ab1c203dc' },
     },
     updates: {
       // preencher após executar: eas update:configure
