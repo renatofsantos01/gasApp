@@ -21,6 +21,7 @@ import {
   RevenueReport,
   TopProductsReport,
   Client,
+  Deliverer,
   ValidateCouponResponse,
 } from '../types';
 
@@ -255,6 +256,25 @@ class ApiService {
       { params: { total } },
     );
     return response.data;
+  }
+
+  // Deliverer endpoints
+  async getDeliverers(): Promise<Deliverer[]> {
+    const response = await this.api.get<Deliverer[]>('/users/deliverers');
+    return response.data;
+  }
+
+  async assignDeliverer(orderId: string, delivererId: string): Promise<void> {
+    await this.api.patch(`/orders/${orderId}/assign`, { delivererId });
+  }
+
+  async getMyDeliveries(): Promise<Order[]> {
+    const response = await this.api.get<Order[]>('/orders/my-deliveries');
+    return response.data;
+  }
+
+  async updateDeliveryStatus(orderId: string, status: string): Promise<void> {
+    await this.api.patch(`/orders/${orderId}/delivery-status`, { status });
   }
 }
 

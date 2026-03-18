@@ -5,8 +5,15 @@ export interface User {
   email: string;
   phone?: string;
   phoneVerified?: boolean;
-  role: 'client' | 'admin' | 'superadmin';
+  role: 'client' | 'admin' | 'superadmin' | 'entregador';
   createdat?: string;
+}
+
+export interface Deliverer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
 }
 
 export interface LoginRequest {
@@ -106,6 +113,8 @@ export interface Order {
   couponCode?: string;
   discountAmount?: number;
   cpfCnpj?: string;
+  delivererId?: string;
+  delivererName?: string;
   createdAt: string;
   createdat?: string; // Backwards compatibility
   updatedAt: string;

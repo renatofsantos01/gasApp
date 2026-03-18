@@ -7,10 +7,18 @@ import { theme } from '../theme';
 
 export const HomeButton: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { tenantConfig } = useAuth();
+  const { tenantConfig, user } = useAuth();
+
+  const handlePress = () => {
+    if (user?.role === 'entregador') {
+      navigation.navigate('DelivererHome');
+    } else {
+      navigation.navigate('Tabs');
+    }
+  };
 
   return (
-    <TouchableOpacity onPress={() => navigation.navigate('Tabs')} style={styles.container}>
+    <TouchableOpacity onPress={handlePress} style={styles.container}>
       {tenantConfig?.logoUrl ? (
         <Image source={{ uri: tenantConfig.logoUrl }} style={styles.logo} resizeMode="contain" />
       ) : (

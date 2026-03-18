@@ -8,6 +8,7 @@ import { PhoneVerificationScreen } from '../screens/PhoneVerificationScreen';
 import { AppErrorScreen } from '../screens/AppErrorScreen';
 import { ClientNavigator } from './ClientNavigator';
 import { AdminNavigator } from './AdminNavigator';
+import { DelivererNavigator } from './DelivererNavigator';
 import { Loading } from '../components/Loading';
 
 export type RootStackParamList = {
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   PhoneVerification: undefined;
   ClientApp: undefined;
   AdminApp: undefined;
+  DelivererApp: undefined;
   EditProfile: undefined;
   AddressesList: undefined;
   AddEditAddress: { addressId?: string };
@@ -46,6 +48,8 @@ export const RootNavigator: React.FC = () => {
         <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
       ) : user?.role === 'admin' || user?.role === 'superadmin' ? (
         <Stack.Screen name="AdminApp" component={AdminNavigator} />
+      ) : user?.role === 'entregador' ? (
+        <Stack.Screen name="DelivererApp" component={DelivererNavigator} />
       ) : (
         <Stack.Screen name="ClientApp" component={ClientNavigator} />
       )}

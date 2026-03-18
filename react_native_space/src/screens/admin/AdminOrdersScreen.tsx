@@ -14,22 +14,22 @@ import {
   Button,
   Portal,
   Modal,
-  Menu,
+  RadioButton,
 } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { api } from '../../services/api';
+import { api, apiService } from '../../services/api';
+import { Deliverer } from '../../types';
 import { theme } from '../../theme';
 
 interface Order {
   id: string;
-  user: {
-    name: string;
-    email: string;
-  };
+  user: { name: string; email: string };
   totalAmount: number;
   status: string;
   createdAt: string;
   paymentMethod: string;
+  delivererId?: string;
+  delivererName?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -57,8 +57,16 @@ export const AdminOrdersScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Todos');
-  const [statusMenuVisible, setStatusMenuVisible] = useState(false);
+
+  // Status modal
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Assign deliverer modal
+  const [assignModalVisible, setAssignModalVisible] = useState(false);
+  const [deliverers, setDeliverers] = useState<Deliverer[]>([]);
+  const [selectedDelivererId, setSelectedDelivererId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
 
   const loadOrders = async () => {
     try {
@@ -87,21 +95,18 @@ export const AdminOrdersScreen: React.FC = () => {
 
   const filterOrders = () => {
     let filtered = orders ?? [];
-
     if (selectedStatus !== 'Todos') {
-      filtered = filtered?.filter((o) => o?.status === selectedStatus) ?? [];
+      filtered = filtered.filter((o) => o?.status === selectedStatus);
     }
-
     if (searchQuery) {
-      const query = searchQuery?.toLowerCase() ?? '';
-      filtered = filtered?.filter(
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
         (o) =>
-          (o?.user?.name?.toLowerCase()?.includes(query) ?? false) ||
-          (o?.user?.email?.toLowerCase()?.includes(query) ?? false) ||
-          (o?.id?.toLowerCase()?.includes(query) ?? false)
-      ) ?? [];
+          o?.user?.name?.toLowerCase().includes(query) ||
+          o?.user?.email?.toLowerCase().includes(query) ||
+          o?.id?.toLowerCase().includes(query)
+      );
     }
-
     setFilteredOrders(filtered);
   };
 
@@ -113,7 +118,7 @@ export const AdminOrdersScreen: React.FC = () => {
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       loadOrders();
-      setStatusMenuVisible(false);
+      setStatusModalVisible(false);
       setSelectedOrder(null);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -122,30 +127,52 @@ export const AdminOrdersScreen: React.FC = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     try {
-      await api.patch(`/orders/${orderId}/cancel`, {
-        reason: 'Cancelado pelo administrador',
-      });
+      await api.patch(`/orders/${orderId}/cancel`, { cancelReason: 'Cancelado pelo administrador' });
       loadOrders();
     } catch (error) {
       console.error('Erro ao cancelar pedido:', error);
     }
   };
 
+  const openAssignModal = async (order: Order) => {
+    setSelectedOrder(order);
+    setSelectedDelivererId(order.delivererId ?? '');
+    try {
+      const list = await apiService.getDeliverers();
+      setDeliverers(list);
+    } catch {
+      setDeliverers([]);
+    }
+    setAssignModalVisible(true);
+  };
+
+  const handleAssignDeliverer = async () => {
+    if (!selectedOrder || !selectedDelivererId) return;
+    try {
+      setAssignLoading(true);
+      await apiService.assignDeliverer(selectedOrder.id, selectedDelivererId);
+      loadOrders();
+      setAssignModalVisible(false);
+      setSelectedOrder(null);
+    } catch (e) {
+      console.error('Erro ao atribuir entregador:', e);
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date?.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }) ?? '';
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
   };
 
   const renderOrder = ({ item }: { item: Order }) => (
     <Card
       style={styles.orderCard}
-      onPress={() => navigation.navigate('OrderDetails' as never, { orderId: item?.id } as never)}
+      onPress={() => (navigation as any).navigate('OrderDetails', { orderId: item?.id })}
     >
       <Card.Content>
         <View style={styles.orderHeader}>
@@ -158,9 +185,7 @@ export const AdminOrdersScreen: React.FC = () => {
             </Text>
           </View>
           <Chip
-            style={{
-              backgroundColor: STATUS_COLORS?.[item?.status ?? ''] ?? '#999',
-            }}
+            style={{ backgroundColor: STATUS_COLORS?.[item?.status ?? ''] ?? '#999' }}
             textStyle={{ color: 'white' }}
           >
             {item?.status ?? ''}
@@ -170,9 +195,12 @@ export const AdminOrdersScreen: React.FC = () => {
         <Text variant="bodyMedium" style={styles.customerName}>
           Cliente: {item?.user?.name ?? 'Desconhecido'}
         </Text>
-        <Text variant="bodySmall" style={styles.customerEmail}>
-          {item?.user?.email ?? ''}
-        </Text>
+
+        {item?.delivererId ? (
+          <Text variant="bodySmall" style={styles.delivererBadge}>
+            Entregador: {item?.delivererName ?? item.delivererId.substring(0, 8)}
+          </Text>
+        ) : null}
 
         <View style={styles.orderFooter}>
           <Text variant="titleMedium" style={styles.totalAmount}>
@@ -187,24 +215,29 @@ export const AdminOrdersScreen: React.FC = () => {
           <View style={styles.actions}>
             <Button
               mode="outlined"
-              onPress={() => {
-                setSelectedOrder(item);
-                setStatusMenuVisible(true);
-              }}
+              onPress={() => { setSelectedOrder(item); setStatusModalVisible(true); }}
               style={styles.actionButton}
+              compact
             >
-              Atualizar Status
+              Status
             </Button>
-            {item?.status !== 'Cancelado' && (
-              <Button
-                mode="outlined"
-                textColor="#EF5350"
-                onPress={() => handleCancelOrder(item?.id ?? '')}
-                style={styles.actionButton}
-              >
-                Cancelar
-              </Button>
-            )}
+            <Button
+              mode="outlined"
+              onPress={() => openAssignModal(item)}
+              style={styles.actionButton}
+              compact
+            >
+              Entregador
+            </Button>
+            <Button
+              mode="outlined"
+              textColor="#EF5350"
+              onPress={() => handleCancelOrder(item?.id ?? '')}
+              style={styles.actionButton}
+              compact
+            >
+              Cancelar
+            </Button>
           </View>
         )}
       </Card.Content>
@@ -226,7 +259,7 @@ export const AdminOrdersScreen: React.FC = () => {
         style={styles.statusContainer}
         contentContainerStyle={styles.statusContentContainer}
       >
-        {STATUS_OPTIONS?.map((status) => (
+        {STATUS_OPTIONS.map((status) => (
           <Chip
             key={status}
             selected={selectedStatus === status}
@@ -236,7 +269,7 @@ export const AdminOrdersScreen: React.FC = () => {
           >
             {status}
           </Chip>
-        )) ?? []}
+        ))}
       </ScrollView>
 
       <FlatList
@@ -254,43 +287,74 @@ export const AdminOrdersScreen: React.FC = () => {
         }
       />
 
+      {/* Modal de status */}
       <Portal>
         <Modal
-          visible={statusMenuVisible}
-          onDismiss={() => {
-            setStatusMenuVisible(false);
-            setSelectedOrder(null);
-          }}
+          visible={statusModalVisible}
+          onDismiss={() => { setStatusModalVisible(false); setSelectedOrder(null); }}
           contentContainerStyle={styles.modal}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>
-            Atualizar Status do Pedido
+          <Text variant="titleLarge" style={styles.modalTitle}>Atualizar Status</Text>
+          <Text variant="bodyMedium" style={styles.modalSubtitle}>
+            Pedido #{selectedOrder?.id?.substring(0, 8) ?? ''}
           </Text>
+          {['Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue'].map((status) => (
+            <Button
+              key={status}
+              mode="outlined"
+              onPress={() => handleUpdateStatus(selectedOrder?.id ?? '', status)}
+              style={styles.statusButton}
+            >
+              {status}
+            </Button>
+          ))}
+          <Button mode="text" onPress={() => { setStatusModalVisible(false); setSelectedOrder(null); }}>
+            Cancelar
+          </Button>
+        </Modal>
+      </Portal>
+
+      {/* Modal de atribuição de entregador */}
+      <Portal>
+        <Modal
+          visible={assignModalVisible}
+          onDismiss={() => { setAssignModalVisible(false); setSelectedOrder(null); }}
+          contentContainerStyle={styles.modal}
+        >
+          <Text variant="titleLarge" style={styles.modalTitle}>Atribuir Entregador</Text>
           <Text variant="bodyMedium" style={styles.modalSubtitle}>
             Pedido #{selectedOrder?.id?.substring(0, 8) ?? ''}
           </Text>
 
-          {['Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue']?.map(
-            (status) => (
-              <Button
-                key={status}
-                mode="outlined"
-                onPress={() => handleUpdateStatus(selectedOrder?.id ?? '', status)}
-                style={styles.statusButton}
-              >
-                {status}
-              </Button>
-            )
-          ) ?? []}
+          {deliverers.length === 0 ? (
+            <Text variant="bodyMedium" style={styles.noDeliverers}>
+              Nenhum entregador cadastrado.{'\n'}Crie um usuário com role "entregador".
+            </Text>
+          ) : (
+            <RadioButton.Group
+              onValueChange={setSelectedDelivererId}
+              value={selectedDelivererId}
+            >
+              {deliverers.map((d) => (
+                <RadioButton.Item
+                  key={d.id}
+                  label={d.name}
+                  value={d.id}
+                />
+              ))}
+            </RadioButton.Group>
+          )}
 
           <Button
-            mode="text"
-            onPress={() => {
-              setStatusMenuVisible(false);
-              setSelectedOrder(null);
-            }}
-            style={styles.cancelButton}
+            mode="contained"
+            onPress={handleAssignDeliverer}
+            disabled={!selectedDelivererId || assignLoading}
+            loading={assignLoading}
+            style={styles.assignButton}
           >
+            Atribuir
+          </Button>
+          <Button mode="text" onPress={() => { setAssignModalVisible(false); setSelectedOrder(null); }}>
             Cancelar
           </Button>
         </Modal>
@@ -300,55 +364,24 @@ export const AdminOrdersScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  searchbar: {
-    margin: 16,
-  },
-  statusContainer: {
-    maxHeight: 50,
-    marginBottom: 8,
-  },
-  statusContentContainer: {
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  statusChip: {
-    marginRight: 8,
-    height: 32,
-  },
-  listContent: {
-    padding: 16,
-  },
-  orderCard: {
-    marginBottom: 16,
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  searchbar: { margin: 16 },
+  statusContainer: { maxHeight: 50, marginBottom: 8 },
+  statusContentContainer: { paddingHorizontal: 16, alignItems: 'center' },
+  statusChip: { marginRight: 8, height: 32 },
+  listContent: { padding: 16 },
+  orderCard: { marginBottom: 16 },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
   },
-  orderInfo: {
-    flex: 1,
-  },
-  orderId: {
-    fontWeight: 'bold',
-  },
-  orderDate: {
-    color: '#666',
-    marginTop: 4,
-  },
-  customerName: {
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  customerEmail: {
-    color: '#666',
-    marginTop: 2,
-  },
+  orderInfo: { flex: 1 },
+  orderId: { fontWeight: 'bold' },
+  orderDate: { color: '#666', marginTop: 4 },
+  customerName: { fontWeight: '600', marginTop: 8 },
+  delivererBadge: { color: '#7B1FA2', marginTop: 2 },
   orderFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -358,44 +391,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
-  totalAmount: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
-  },
-  paymentMethod: {
-    color: '#666',
-  },
-  actions: {
-    flexDirection: 'row',
-    marginTop: 12,
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
+  totalAmount: { color: theme.colors.primary, fontWeight: 'bold' },
+  paymentMethod: { color: '#666' },
+  actions: { flexDirection: 'row', marginTop: 12, gap: 8 },
+  actionButton: { flex: 1 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', padding: 32 },
   modal: {
     backgroundColor: 'white',
     padding: 20,
     margin: 20,
     borderRadius: 8,
+    maxHeight: '80%',
   },
-  modalTitle: {
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  modalSubtitle: {
-    marginBottom: 16,
-    color: '#666',
-  },
-  statusButton: {
-    marginBottom: 8,
-  },
-  cancelButton: {
-    marginTop: 8,
-  },
+  modalTitle: { marginBottom: 8, fontWeight: 'bold' },
+  modalSubtitle: { marginBottom: 16, color: '#666' },
+  statusButton: { marginBottom: 8 },
+  noDeliverers: { color: '#666', textAlign: 'center', marginVertical: 16 },
+  assignButton: { marginTop: 16, marginBottom: 8 },
 });
