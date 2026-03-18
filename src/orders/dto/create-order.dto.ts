@@ -2,6 +2,7 @@ import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsInt, Min, 
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+
 export class OrderItemDto {
   @ApiProperty({ example: 'uuid-of-product' })
   @IsString()
@@ -28,6 +29,16 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   observations?: string;
+
+  @ApiPropertyOptional({ example: 'DESCONTO10' })
+  @IsString()
+  @IsOptional()
+  couponCode?: string;
+
+  @ApiPropertyOptional({ example: '000.000.000-00' })
+  @IsString()
+  @IsOptional()
+  cpfCnpj?: string;
 
   @ApiProperty({ type: [OrderItemDto] })
   @IsArray()

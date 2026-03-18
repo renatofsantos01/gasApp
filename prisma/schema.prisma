@@ -34,7 +34,8 @@ model tenant {
   users          user[]
   products       product[]
   orders         order[]
-  
+  coupons        coupon[]
+
   @@index([subdomain])
 }
 
@@ -104,9 +105,12 @@ model order {
   totalamount   Float
   paymentmethod String      // 'Dinheiro', 'Pix', 'Cartão'
   status        String      @default("Pendente") // 'Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue', 'Cancelado'
-  observations  String?
-  cancelreason  String?
-  createdat     DateTime    @default(now())
+  observations   String?
+  cancelreason   String?
+  couponcode     String?
+  discountamount Float?
+  cpfcnpj        String?
+  createdat      DateTime    @default(now())
   updatedat     DateTime    @updatedAt
   items         orderitem[]
   
@@ -124,7 +128,24 @@ model orderitem {
   quantity  Int
   unitprice Float
   subtotal  Float
-  
+
   @@index([orderid])
   @@index([productid])
+}
+
+model coupon {
+  id             String    @id @default(uuid())
+  tenantid       String
+  tenant         tenant    @relation(fields: [tenantid], references: [id], onDelete: Cascade)
+  code           String
+  discounttype   String    // 'percentage' | 'fixed'
+  discountvalue  Float
+  maxuses        Int?
+  usedcount      Int       @default(0)
+  isactive       Boolean   @default(true)
+  expiresat      DateTime?
+  createdat      DateTime  @default(now())
+
+  @@unique([code, tenantid])
+  @@index([tenantid])
 }

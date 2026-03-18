@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { CouponsService } from '../coupons/coupons.service';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private couponsService: CouponsService,
+  ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
     // Get user's tenant
@@ -32,7 +36,7 @@ export class OrdersService {
       throw new ForbiddenException('Address does not belong to you');
     }
 
-    // Verify all products exist and calculate totals
+    // Verify all products exist, check stock and calculate totals
     let totalAmount = 0;
     const orderItemsData: { productid: string; quantity: number; unitprice: number; subtotal: number }[] = [];
 
@@ -42,7 +46,16 @@ export class OrdersService {
       });
 
       if (!product) {
-        throw new NotFoundException(`Product ${item.productId} not found`);
+        throw new NotFoundException(`Produto não encontrado`);
+      }
+
+      if (product.stock < item.quantity) {
+        if (product.stock === 0) {
+          throw new BadRequestException(`"${product.name}" está esgotado`);
+        }
+        throw new BadRequestException(
+          `"${product.name}" tem apenas ${product.stock} unidade(s) disponível(is)`,
+        );
       }
 
       const subtotal = product.price * item.quantity;
@@ -56,33 +69,71 @@ export class OrdersService {
       });
     }
 
-    // Create order with items
-    const order = await this.prisma.order.create({
-      data: {
-        tenantid: user.tenantid,
-        userid: userId,
-        addressid: dto.addressId,
-        totalamount: totalAmount,
-        paymentmethod: dto.paymentMethod,
-        status: 'Pendente',
-        observations: dto.observations,
-        items: {
-          create: orderItemsData,
+    // Apply coupon if provided
+    let discountAmount = 0;
+    let appliedCouponCode: string | undefined;
+    let appliedCoupon: any = null;
+
+    if (dto.couponCode) {
+      const validation = await this.couponsService.validate(
+        dto.couponCode,
+        user.tenantid,
+        totalAmount,
+      );
+      if (!validation.valid) {
+        throw new BadRequestException(validation.message ?? 'Cupom inválido');
+      }
+      discountAmount = validation.discountAmount;
+      appliedCouponCode = validation.coupon.code;
+      appliedCoupon = validation.coupon;
+    }
+
+    const finalAmount = Math.max(0, Math.round((totalAmount - discountAmount) * 100) / 100);
+
+    // Create order + decrement stock atomically
+    const [order] = await this.prisma.$transaction([
+      this.prisma.order.create({
+        data: {
+          tenantid: user.tenantid,
+          userid: userId,
+          addressid: dto.addressId,
+          totalamount: finalAmount,
+          paymentmethod: dto.paymentMethod,
+          status: 'Pendente',
+          observations: dto.observations,
+          couponcode: appliedCouponCode ?? null,
+          discountamount: discountAmount > 0 ? discountAmount : null,
+          cpfcnpj: dto.cpfCnpj ?? null,
+          items: {
+            create: orderItemsData,
+          },
         },
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                price: true,
+        include: {
+          items: {
+            include: {
+              product: {
+                select: { name: true, price: true },
               },
             },
           },
         },
-      },
-    });
+      }),
+      // Decrement stock for each item
+      ...orderItemsData.map((item) =>
+        this.prisma.product.update({
+          where: { id: item.productid },
+          data: { stock: { decrement: item.quantity } },
+        }),
+      ),
+    ]);
+
+    // Increment coupon usage count
+    if (appliedCoupon) {
+      await this.prisma.coupon.update({
+        where: { id: appliedCoupon.id },
+        data: { usedcount: { increment: 1 } },
+      });
+    }
 
     return {
       id: order.id,
@@ -92,6 +143,9 @@ export class OrdersService {
       paymentMethod: order.paymentmethod,
       status: order.status,
       observations: order.observations,
+      couponCode: order.couponcode,
+      discountAmount: order.discountamount,
+      cpfCnpj: order.cpfcnpj,
       createdAt: order.createdat,
       items: order.items.map((item: any) => ({
         id: item.id,
@@ -153,6 +207,9 @@ export class OrdersService {
       paymentMethod: order.paymentmethod,
       status: order.status,
       observations: order.observations,
+      couponCode: order.couponcode,
+      discountAmount: order.discountamount,
+      cpfCnpj: order.cpfcnpj,
       createdAt: order.createdat,
       items: order.items.map((item: any) => ({
         product: {
@@ -221,6 +278,9 @@ export class OrdersService {
       status: order.status,
       observations: order.observations,
       cancelReason: order.cancelreason,
+      couponCode: order.couponcode,
+      discountAmount: order.discountamount,
+      cpfCnpj: order.cpfcnpj,
       createdAt: order.createdat,
       updatedAt: order.updatedat,
       items: order.items.map((item: any) => ({

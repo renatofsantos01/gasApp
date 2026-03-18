@@ -7,14 +7,28 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
+  private mapProduct(p: any) {
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      description: p.description,
+      price: p.price,
+      imageUrl: p.imageurl,
+      stock: p.stock,
+      createdat: p.createdat,
+    };
+  }
+
   async findAll(tenantId: string, category?: string) {
     const where: any = { tenantid: tenantId };
     if (category) where.category = category;
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where,
       orderBy: { createdat: 'desc' },
     });
+    return products.map((p) => this.mapProduct(p));
   }
 
   async findOne(id: string, tenantId: string) {
@@ -30,11 +44,11 @@ export class ProductsService {
       throw new ForbiddenException('Access denied');
     }
 
-    return product;
+    return this.mapProduct(product);
   }
 
   async create(dto: CreateProductDto, tenantId: string) {
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         name: dto.name,
         category: dto.category,
@@ -45,10 +59,11 @@ export class ProductsService {
         tenantid: tenantId,
       },
     });
+    return this.mapProduct(product);
   }
 
   async update(id: string, dto: UpdateProductDto, tenantId: string) {
-    await this.findOne(id, tenantId); // Check if exists and belongs to tenant
+    await this.findOne(id, tenantId);
 
     const updateData: any = {};
     if (dto.name !== undefined) updateData.name = dto.name;
@@ -58,10 +73,11 @@ export class ProductsService {
     if (dto.imageUrl !== undefined) updateData.imageurl = dto.imageUrl;
     if (dto.stock !== undefined) updateData.stock = dto.stock;
 
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { id },
       data: updateData,
     });
+    return this.mapProduct(product);
   }
 
   async remove(id: string, tenantId: string) {
