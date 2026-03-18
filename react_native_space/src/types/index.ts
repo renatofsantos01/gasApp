@@ -4,6 +4,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  phoneVerified?: boolean;
   role: 'client' | 'admin' | 'superadmin';
   createdat?: string;
 }

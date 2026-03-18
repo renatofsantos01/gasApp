@@ -5,6 +5,7 @@ import { TenantSelectionScreen } from '../screens/TenantSelectionScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { PhoneVerificationScreen } from '../screens/PhoneVerificationScreen';
 import { ClientNavigator } from './ClientNavigator';
 import { AdminNavigator } from './AdminNavigator';
 import { Loading } from '../components/Loading';
@@ -14,6 +15,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
   Register: undefined;
+  PhoneVerification: undefined;
   ClientApp: undefined;
   AdminApp: undefined;
   EditProfile: undefined;
@@ -31,8 +33,11 @@ export const RootNavigator: React.FC = () => {
     return <Loading />;
   }
 
-  // Se não tem tenant selecionado e não está autenticado, mostra seleção de tenant
   const hasTenant = !!tenantId;
+
+  // Usuário autenticado mas com telefone pendente de verificação
+  const needsPhoneVerification =
+    isAuthenticated && !!user?.phone && user?.phoneVerified === false;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -48,6 +53,8 @@ export const RootNavigator: React.FC = () => {
             </>
           )}
         </>
+      ) : needsPhoneVerification ? (
+        <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
       ) : user?.role === 'admin' || user?.role === 'superadmin' ? (
         <Stack.Screen name="AdminApp" component={AdminNavigator} />
       ) : (

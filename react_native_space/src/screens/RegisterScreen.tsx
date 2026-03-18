@@ -63,7 +63,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     if (formData?.password !== formData?.confirmPassword) {
       newErrors.confirmPassword = 'Senhas não conferem';
     }
-    if (formData?.phone && !validatePhone(formData?.phone)) {
+    if (!validateRequired(formData?.phone)) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (!validatePhone(formData?.phone)) {
       newErrors.phone = 'Telefone inválido';
     }
 
@@ -96,21 +98,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         name: formData?.name,
         email: formData?.email,
         password: formData?.password,
-        phone: formData?.phone || undefined,
+        phone: formData?.phone,
         address: hasAddress
           ? {
-              street: formData?.street,
-              number: formData?.number,
-              complement: formData?.complement || undefined,
-              neighborhood: formData?.neighborhood,
-              city: formData?.city,
-              state: formData?.state,
-              zipcode: formData?.zipcode,
-            }
+            street: formData?.street,
+            number: formData?.number,
+            complement: formData?.complement || undefined,
+            neighborhood: formData?.neighborhood,
+            city: formData?.city,
+            state: formData?.state,
+            zipcode: formData?.zipcode,
+          }
           : undefined,
       });
     } catch (error: any) {
-      const message = error?.response?.data?.message ?? 'Erro ao criar conta. Tente novamente.';
+      const raw = error?.response?.data?.message;
+      const message = Array.isArray(raw)
+        ? raw.join('\n')
+        : raw ?? error?.message ?? 'Erro ao criar conta. Tente novamente.';
       Alert.alert('Erro', message);
       setLoading(false);
     }
@@ -160,7 +165,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             {errors?.email && <HelperText type="error">{errors?.email}</HelperText>}
 
             <TextInput
-              label="Telefone"
+              label="Telefone *"
               value={formData?.phone}
               onChangeText={(text) => updateField('phone', text)}
               mode="outlined"

@@ -23,7 +23,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onPress, showCustom
           <StatusBadge status={order?.status ?? 'Pendente'} size="small" />
         </View>
         <Text variant="bodySmall" style={styles.date}>
-          {formatDate(order?.createdat ?? '')}
+          {formatDate(order?.createdAt ?? order?.createdat ?? '')}
         </Text>
         {showCustomer && order?.user && (
           <Text variant="bodyMedium" style={styles.customer}>
@@ -35,7 +35,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onPress, showCustom
             {order?.items?.length ?? 0} {(order?.items?.length ?? 0) === 1 ? 'item' : 'itens'}
           </Text>
           <Text variant="titleLarge" style={styles.total}>
-            {formatCurrency(order?.totalamount ?? 0)}
+            {formatCurrency(order?.totalAmount ?? order?.totalamount ?? 0)}
           </Text>
         </View>
       </Card.Content>

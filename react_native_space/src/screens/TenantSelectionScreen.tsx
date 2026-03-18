@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { tenantService } from '../services/tenantService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme';
 
 type TenantSelectionScreenProps = {
@@ -13,6 +14,7 @@ type TenantSelectionScreenProps = {
 };
 
 export const TenantSelectionScreen: React.FC<TenantSelectionScreenProps> = ({ navigation }) => {
+  const { setTenant } = useAuth();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,8 +41,8 @@ export const TenantSelectionScreen: React.FC<TenantSelectionScreenProps> = ({ na
       await AsyncStorage.setItem('tenantId', tenantConfig.id);
       await AsyncStorage.setItem('tenantConfig', JSON.stringify(tenantConfig));
 
-      // Navegar para Welcome (que vai para Login)
-      navigation.replace('Welcome');
+      // Atualizar contexto para que o RootNavigator renderize as telas corretas
+      setTenant(tenantConfig.id, tenantConfig);
     } catch (err: any) {
       console.error('Error selecting tenant:', err);
       setError('Erro ao buscar distribuidora. Tente novamente.');

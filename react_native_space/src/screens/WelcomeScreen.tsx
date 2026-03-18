@@ -5,12 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { theme } from '../theme';
+import { useAuth } from '../contexts/AuthContext';
 
 type WelcomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Welcome'>;
 };
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
+  const { clearTenant } = useAuth();
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
@@ -44,6 +47,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
             style={styles.registerButton}
           >
             Criar Conta
+          </Button>
+
+          <Button
+            mode="text"
+            onPress={clearTenant}
+            style={styles.registerButton}
+            textColor="#9E9E9E"
+          >
+            Trocar distribuidora
           </Button>
         </View>
       </View>

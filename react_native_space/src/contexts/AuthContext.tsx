@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from '../services/api';
 import { User, LoginRequest, RegisterRequest } from '../types';
-import { TenantConfig } from '../services/tenantService';
+import { TenantConfig, tenantService } from '../services/tenantService';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +14,8 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  setTenant: (id: string, config: TenantConfig) => void;
+  clearTenant: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,13 +34,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const savedTenantId = await AsyncStorage.getItem('tenantId');
       const savedConfig = await AsyncStorage.getItem('tenantConfig');
-      
-      if (savedTenantId) {
-        setTenantId(savedTenantId);
-      }
-      
-      if (savedConfig) {
-        setTenantConfig(JSON.parse(savedConfig));
+
+      if (savedTenantId && savedConfig) {
+        const config: TenantConfig = JSON.parse(savedConfig);
+        // Valida se o tenant ainda existe na API
+        const valid = await tenantService.getBySubdomain(config.subdomain);
+        if (valid) {
+          setTenantId(savedTenantId);
+          setTenantConfig(config);
+        } else {
+          // Tenant inválido — limpa e volta para TenantSelection
+          await AsyncStorage.removeItem('tenantId');
+          await AsyncStorage.removeItem('tenantConfig');
+        }
       }
     } catch (error) {
       console.error('Error loading tenant config:', error);
@@ -101,6 +109,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTenantConfig(null);
   };
 
+  const setTenant = (id: string, config: TenantConfig) => {
+    setTenantId(id);
+    setTenantConfig(config);
+  };
+
+  const clearTenant = async () => {
+    await AsyncStorage.removeItem('tenantId');
+    await AsyncStorage.removeItem('tenantConfig');
+    setTenantId(null);
+    setTenantConfig(null);
+  };
+
   const refreshUser = async () => {
     try {
       const profile = await apiService.getProfile();
@@ -122,6 +142,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register,
         logout,
         refreshUser,
+        setTenant,
+        clearTenant,
       }}
     >
       {children}

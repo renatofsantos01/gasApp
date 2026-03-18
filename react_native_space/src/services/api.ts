@@ -126,6 +126,16 @@ class ApiService {
     return response.data;
   }
 
+  async sendPhoneVerification(): Promise<{ message: string }> {
+    const response = await this.api.post<{ message: string }>('/auth/send-verification');
+    return response.data;
+  }
+
+  async verifyPhone(code: string): Promise<{ message: string }> {
+    const response = await this.api.post<{ message: string }>('/auth/verify-phone', { code });
+    return response.data;
+  }
+
   // Products endpoints
   async getProducts(category?: string): Promise<Product[]> {
     const response = await this.api.get<Product[]>('/products', {
