@@ -4,18 +4,20 @@ import { apiService } from '../services/api';
 import { User, LoginRequest, RegisterRequest } from '../types';
 import { TenantConfig, tenantService } from '../services/tenantService';
 
+const TENANT_SUBDOMAIN = process.env.EXPO_PUBLIC_TENANT_SUBDOMAIN || '';
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   tenantId: string | null;
   tenantConfig: TenantConfig | null;
+  tenantError: boolean;
   login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  setTenant: (id: string, config: TenantConfig) => void;
-  clearTenant: () => Promise<void>;
+  retryTenant: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,100 +27,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tenantConfig, setTenantConfig] = useState<TenantConfig | null>(null);
+  const [tenantError, setTenantError] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   const loadTenantConfig = async () => {
+    if (!TENANT_SUBDOMAIN) {
+      setTenantError(true);
+      return;
+    }
     try {
-      const savedTenantId = await AsyncStorage.getItem('tenantId');
-      const savedConfig = await AsyncStorage.getItem('tenantConfig');
-
-      if (savedTenantId && savedConfig) {
-        const config: TenantConfig = JSON.parse(savedConfig);
-        // Valida se o tenant ainda existe na API
-        const valid = await tenantService.getBySubdomain(config.subdomain);
-        if (valid) {
-          setTenantId(savedTenantId);
-          setTenantConfig(config);
-        } else {
-          // Tenant inválido — limpa e volta para TenantSelection
-          await AsyncStorage.removeItem('tenantId');
-          await AsyncStorage.removeItem('tenantConfig');
-        }
+      const config = await tenantService.getBySubdomain(TENANT_SUBDOMAIN);
+      if (config) {
+        setTenantId(config.id);
+        setTenantConfig(config);
+        setTenantError(false);
+      } else {
+        setTenantError(true);
       }
-    } catch (error) {
-      console.error('Error loading tenant config:', error);
+    } catch {
+      setTenantError(true);
     }
   };
 
   const checkAuth = async () => {
     try {
       await loadTenantConfig();
-      
       const token = await apiService.getToken();
       if (token) {
         const profile = await apiService.getProfile();
         setUser(profile);
       }
-    } catch (error) {
+    } catch {
       await apiService.removeToken();
     } finally {
       setIsLoading(false);
     }
   };
 
+  const retryTenant = async () => {
+    setIsLoading(true);
+    setTenantError(false);
+    await checkAuth();
+  };
+
   const login = async (data: LoginRequest) => {
-    // Adiciona tenantId do storage ao request
-    const savedTenantId = await AsyncStorage.getItem('tenantId');
-    const loginData = {
-      ...data,
-      tenantId: savedTenantId || undefined,
-    };
-    
-    const response = await apiService.login(loginData);
+    const response = await apiService.login({ ...data, tenantId: tenantId || undefined });
     await apiService.saveToken(response?.token ?? '');
     setUser(response?.user ?? null);
   };
 
   const register = async (data: RegisterRequest) => {
-    // Adiciona tenantId do storage ao request
-    const savedTenantId = await AsyncStorage.getItem('tenantId');
-    if (!savedTenantId) {
-      throw new Error('Tenant not selected');
-    }
-    
-    const registerData = {
-      ...data,
-      tenantId: savedTenantId,
-    };
-    
-    const response = await apiService.register(registerData);
+    if (!tenantId) throw new Error('App não configurado');
+    const response = await apiService.register({ ...data, tenantId });
     await apiService.saveToken(response?.token ?? '');
     setUser(response?.user ?? null);
   };
 
   const logout = async () => {
     await apiService.removeToken();
-    // Remove tenant config ao fazer logout
-    await AsyncStorage.removeItem('tenantId');
-    await AsyncStorage.removeItem('tenantConfig');
     setUser(null);
-    setTenantId(null);
-    setTenantConfig(null);
-  };
-
-  const setTenant = (id: string, config: TenantConfig) => {
-    setTenantId(id);
-    setTenantConfig(config);
-  };
-
-  const clearTenant = async () => {
-    await AsyncStorage.removeItem('tenantId');
-    await AsyncStorage.removeItem('tenantConfig');
-    setTenantId(null);
-    setTenantConfig(null);
   };
 
   const refreshUser = async () => {
@@ -138,12 +108,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         tenantId,
         tenantConfig,
+        tenantError,
         login,
         register,
         logout,
         refreshUser,
-        setTenant,
-        clearTenant,
+        retryTenant,
       }}
     >
       {children}
