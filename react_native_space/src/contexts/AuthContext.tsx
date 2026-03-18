@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from '../services/api';
 import { User, LoginRequest, RegisterRequest } from '../types';
@@ -31,6 +32,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     checkAuth();
+
+    // Recarrega config do tenant quando o app volta do background
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') loadTenantConfig();
+    });
+    return () => sub.remove();
   }, []);
 
   const loadTenantConfig = async () => {

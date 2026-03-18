@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, Image, Alert } from 'react-native';
-import { Text, Button, IconButton, Divider } from 'react-native-paper';
+import { Text, Button, IconButton, Divider, Banner } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { ClientTabParamList } from '../../navigation/ClientNavigator';
 import { useCart } from '../../contexts/CartContext';
+import { apiService } from '../../services/api';
 import { CartItem } from '../../types';
 import { formatCurrency } from '../../utils/format';
 import { EmptyState } from '../../components/EmptyState';
@@ -16,6 +18,35 @@ type CartScreenProps = {
 
 export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   const { items, total, updateQuantity, removeItem } = useCart();
+  const [stockMap, setStockMap] = useState<Record<string, number>>({});
+  const [outOfStockIds, setOutOfStockIds] = useState<Set<string>>(new Set());
+
+  useFocusEffect(
+    React.useCallback(() => {
+      checkStock();
+    }, [items])
+  );
+
+  const checkStock = async () => {
+    if (items.length === 0) return;
+    try {
+      const products = await apiService.getProducts();
+      const map: Record<string, number> = {};
+      products.forEach((p) => { map[p.id] = p.stock; });
+      setStockMap(map);
+
+      const outIds = new Set<string>();
+      items.forEach((item) => {
+        const available = map[item.product.id] ?? 0;
+        if (available === 0) outIds.add(item.product.id);
+      });
+      setOutOfStockIds(outIds);
+    } catch {
+      // silently ignore — user will see error at checkout
+    }
+  };
+
+  const hasOutOfStock = outOfStockIds.size > 0;
 
   const handleCheckout = () => {
     if ((items?.length ?? 0) === 0) {
@@ -27,37 +58,51 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
   const renderCartItem = ({ item }: { item: CartItem }) => {
     const subtotal = (item?.product?.price ?? 0) * (item?.quantity ?? 0);
+    const isOutOfStock = outOfStockIds.has(item?.product?.id ?? '');
+    const availableStock = stockMap[item?.product?.id ?? ''] ?? item?.product?.stock ?? 0;
 
     return (
-      <View style={styles.cartItem}>
-        <Image
-          source={{ uri: item?.product?.imageUrl || 'https://via.placeholder.com/80' }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
+      <View style={[styles.cartItem, isOutOfStock && styles.cartItemDisabled]}>
+        {item?.product?.imageUrl ? (
+          <Image
+            source={{ uri: item.product.imageUrl }}
+            style={[styles.productImage, isOutOfStock && styles.imageDisabled]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.productImage, styles.imagePlaceholder]}>
+            <Text style={styles.imagePlaceholderText}>📦</Text>
+          </View>
+        )}
         <View style={styles.productInfo}>
-          <Text variant="titleMedium" numberOfLines={2} style={styles.productName}>
+          <Text variant="titleMedium" numberOfLines={2} style={[styles.productName, isOutOfStock && styles.textDisabled]}>
             {item?.product?.name ?? ''}
           </Text>
-          <Text variant="bodyMedium" style={styles.productPrice}>
-            {formatCurrency(item?.product?.price ?? 0)}
-          </Text>
-          <View style={styles.quantityContainer}>
-            <IconButton
-              icon="minus"
-              size={20}
-              onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) - 1)}
-            />
-            <Text variant="titleMedium" style={styles.quantity}>
-              {item?.quantity ?? 0}
+          {isOutOfStock ? (
+            <Text variant="bodySmall" style={styles.outOfStockLabel}>⚠ Esgotado — remova para continuar</Text>
+          ) : (
+            <Text variant="bodyMedium" style={styles.productPrice}>
+              {formatCurrency(item?.product?.price ?? 0)}
             </Text>
-            <IconButton
-              icon="plus"
-              size={20}
-              onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) + 1)}
-              disabled={(item?.product?.stock ?? 0) <= (item?.quantity ?? 0)}
-            />
-          </View>
+          )}
+          {!isOutOfStock && (
+            <View style={styles.quantityContainer}>
+              <IconButton
+                icon="minus"
+                size={20}
+                onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) - 1)}
+              />
+              <Text variant="titleMedium" style={styles.quantity}>
+                {item?.quantity ?? 0}
+              </Text>
+              <IconButton
+                icon="plus"
+                size={20}
+                onPress={() => updateQuantity(item?.product?.id ?? '', (item?.quantity ?? 0) + 1)}
+                disabled={(item?.quantity ?? 0) >= availableStock}
+              />
+            </View>
+          )}
         </View>
         <View style={styles.itemActions}>
           <Text variant="titleMedium" style={styles.subtotal}>
@@ -117,6 +162,24 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
         </Text>
       </View>
 
+      {hasOutOfStock && (
+        <Banner
+          visible
+          icon="alert-circle"
+          actions={[
+            {
+              label: 'Remover esgotados',
+              onPress: () => {
+                outOfStockIds.forEach((id) => removeItem(id));
+                setOutOfStockIds(new Set());
+              },
+            },
+          ]}
+        >
+          Alguns produtos estão esgotados. Remova-os para continuar.
+        </Banner>
+      )}
+
       <FlatList
         data={items}
         renderItem={renderCartItem}
@@ -137,6 +200,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
           onPress={handleCheckout}
           contentStyle={styles.buttonContent}
           style={styles.checkoutButton}
+          disabled={hasOutOfStock}
         >
           Finalizar Pedido
         </Button>
@@ -174,17 +238,38 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: theme.colors.surface,
   },
+  cartItemDisabled: {
+    backgroundColor: '#FAFAFA',
+  },
   productImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },
+  imageDisabled: {
+    opacity: 0.4,
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    fontSize: 32,
+  },
   productInfo: {
     flex: 1,
     marginLeft: 12,
   },
   productName: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  textDisabled: {
+    color: '#9E9E9E',
+  },
+  outOfStockLabel: {
+    color: '#E53935',
     fontWeight: '600',
     marginBottom: 4,
   },

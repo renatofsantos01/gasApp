@@ -103,6 +103,9 @@ export interface Order {
   observations?: string;
   cancelReason?: string;
   cancelreason?: string; // Backwards compatibility
+  couponCode?: string;
+  discountAmount?: number;
+  cpfCnpj?: string;
   createdAt: string;
   createdat?: string; // Backwards compatibility
   updatedAt: string;
@@ -116,6 +119,8 @@ export interface CreateOrderRequest {
   addressId: string;
   paymentMethod: PaymentMethod;
   observations?: string;
+  couponCode?: string;
+  cpfCnpj?: string;
   items: Array<{
     productId: string;
     quantity: number;
@@ -174,4 +179,24 @@ export interface TopProductsReport {
 export interface Client extends User {
   orderCount?: number;
   addresses?: Address[];
+}
+
+// Coupon types
+export interface Coupon {
+  id: string;
+  code: string;
+  discounttype: 'percentage' | 'fixed';
+  discountvalue: number;
+  maxuses?: number;
+  usedcount: number;
+  isactive: boolean;
+  expiresat?: string;
+  createdat: string;
+}
+
+export interface ValidateCouponResponse {
+  valid: boolean;
+  discountAmount: number;
+  coupon?: Coupon;
+  message?: string;
 }

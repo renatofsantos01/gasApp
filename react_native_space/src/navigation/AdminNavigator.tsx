@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { HomeButton } from '../components/HomeButton';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
 import { AdminProductsScreen } from '../screens/admin/AdminProductsScreen';
 import { AdminOrdersScreen } from '../screens/admin/AdminOrdersScreen';
@@ -28,7 +29,9 @@ const AdminTabs = () => (
   <Tab.Navigator
     screenOptions={{
       tabBarActiveTintColor: theme.colors.primary,
-      headerShown: false,
+      headerShown: true,
+      headerLeft: () => <HomeButton />,
+      headerTitle: '',
     }}
   >
     <Tab.Screen
@@ -83,7 +86,13 @@ const AdminTabs = () => (
 );
 
 export const AdminNavigator: React.FC = () => (
-  <Stack.Navigator screenOptions={{ headerShown: true, headerBackTitle: 'Voltar' }}>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: true,
+      headerBackTitle: 'Voltar',
+      headerLeft: () => <HomeButton />,
+    }}
+  >
     <Stack.Screen name="Tabs" component={AdminTabs} options={{ headerShown: false }} />
     <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ title: 'Detalhes do Pedido' }} />
   </Stack.Navigator>

@@ -11,6 +11,7 @@ import { EditProfileScreen } from '../screens/client/EditProfileScreen';
 import { AddressesListScreen } from '../screens/client/AddressesListScreen';
 import { AddAddressScreen } from '../screens/client/AddAddressScreen';
 import { OrderDetailsScreen } from '../screens/OrderDetailsScreen';
+import { HomeButton } from '../components/HomeButton';
 import { theme } from '../theme';
 
 export type ClientTabParamList = {
@@ -32,7 +33,9 @@ const ClientTabs = () => (
   <Tab.Navigator
     screenOptions={{
       tabBarActiveTintColor: theme.colors.primary,
-      headerShown: false,
+      headerShown: true,
+      headerLeft: () => <HomeButton />,
+      headerTitle: '',
     }}
   >
     <Tab.Screen
@@ -63,7 +66,13 @@ const ClientTabs = () => (
 );
 
 export const ClientNavigator: React.FC = () => (
-  <Stack.Navigator screenOptions={{ headerShown: true, headerBackTitle: 'Voltar' }}>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: true,
+      headerBackTitle: 'Voltar',
+      headerLeft: () => <HomeButton />,
+    }}
+  >
     <Stack.Screen name="Tabs" component={ClientTabs} options={{ headerShown: false }} />
     <Stack.Screen name="Cart" component={CartScreen} options={{ title: 'Carrinho' }} />
     <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Finalizar Pedido' }} />

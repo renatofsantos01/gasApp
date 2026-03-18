@@ -21,6 +21,7 @@ import {
   RevenueReport,
   TopProductsReport,
   Client,
+  ValidateCouponResponse,
 } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
@@ -244,6 +245,15 @@ class ApiService {
 
   async getClient(id: string): Promise<Client> {
     const response = await this.api.get<Client>(`/users/clients/${id}`);
+    return response.data;
+  }
+
+  // Coupons endpoints
+  async validateCoupon(code: string, total: number): Promise<ValidateCouponResponse> {
+    const response = await this.api.get<ValidateCouponResponse>(
+      `/coupons/validate/${code}`,
+      { params: { total } },
+    );
     return response.data;
   }
 }

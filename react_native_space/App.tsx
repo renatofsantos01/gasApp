@@ -1,12 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { CartProvider } from './src/contexts/CartContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { theme } from './src/theme';
+import { DynamicThemeProvider } from './src/components/DynamicThemeProvider';
 import { apiService } from './src/services/api';
 
 export default function App() {
@@ -19,15 +18,15 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
-        <PaperProvider theme={theme}>
-          <AuthProvider>
+        <AuthProvider>
+          <DynamicThemeProvider>
             <CartProvider>
               <NavigationContainer>
                 <RootNavigator />
               </NavigationContainer>
             </CartProvider>
-          </AuthProvider>
-        </PaperProvider>
+          </DynamicThemeProvider>
+        </AuthProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
   );

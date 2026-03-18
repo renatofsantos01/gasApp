@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, LogOut, LayoutDashboard } from 'lucide-react';
+import { Building2, LogOut, LayoutDashboard, Tag } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,6 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/tenants', label: 'Distribuidoras', icon: Building2 },
+    { href: '/dashboard/coupons', label: 'Cupons', icon: Tag },
   ];
 
   return (
