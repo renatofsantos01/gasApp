@@ -51,6 +51,7 @@ model user {
   phoneverificationcode       String?
   phoneverificationexpiresat  DateTime?
   role      String    // 'superadmin', 'admin', 'client', 'entregador'
+  pushtoken String?   // Expo Push Token
   createdat DateTime  @default(now())
   addresses       address[]
   orders          order[]   @relation("UserOrders")

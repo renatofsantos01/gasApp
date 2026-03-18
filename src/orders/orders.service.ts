@@ -6,12 +6,14 @@ import { CancelOrderDto } from './dto/cancel-order.dto';
 import { AssignDelivererDto } from './dto/assign-deliverer.dto';
 import { DeliveryStatusDto } from './dto/delivery-status.dto';
 import { CouponsService } from '../coupons/coupons.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private couponsService: CouponsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
@@ -136,6 +138,21 @@ export class OrdersService {
         data: { usedcount: { increment: 1 } },
       });
     }
+
+    // Notificar admins do tenant sobre novo pedido
+    try {
+      const admins = await this.prisma.user.findMany({
+        where: { tenantid: user.tenantid, role: 'admin', pushtoken: { not: null } },
+        select: { pushtoken: true },
+      });
+      const tokens = admins.map((a) => a.pushtoken!);
+      await this.notificationsService.sendPushNotification(
+        tokens,
+        'Novo Pedido!',
+        `Pedido #${order.id.substring(0, 8).toUpperCase()} recebido`,
+        { orderId: order.id, screen: 'AdminOrders' },
+      );
+    } catch (_) {}
 
     return {
       id: order.id,
@@ -312,6 +329,22 @@ export class OrdersService {
       },
     });
 
+    // Notificar cliente sobre mudança de status
+    try {
+      const client = await this.prisma.user.findUnique({
+        where: { id: order.userid },
+        select: { pushtoken: true },
+      });
+      if (client?.pushtoken) {
+        await this.notificationsService.sendPushNotification(
+          [client.pushtoken],
+          'Atualização do Pedido',
+          `Seu pedido está: ${dto.status}`,
+          { orderId: id, screen: 'MyOrders' },
+        );
+      }
+    } catch (_) {}
+
     return {
       id: updatedOrder.id,
       status: updatedOrder.status,
@@ -342,6 +375,22 @@ export class OrdersService {
       },
     });
 
+    // Notificar cliente sobre cancelamento
+    try {
+      const client = await this.prisma.user.findUnique({
+        where: { id: order.userid },
+        select: { pushtoken: true },
+      });
+      if (client?.pushtoken) {
+        await this.notificationsService.sendPushNotification(
+          [client.pushtoken],
+          'Pedido Cancelado',
+          `Seu pedido #${id.substring(0, 8).toUpperCase()} foi cancelado`,
+          { orderId: id, screen: 'MyOrders' },
+        );
+      }
+    } catch (_) {}
+
     return {
       id: updatedOrder.id,
       status: updatedOrder.status,
@@ -365,6 +414,18 @@ export class OrdersService {
       data: { delivererid: dto.delivererId },
       select: { id: true, delivererid: true, status: true },
     });
+
+    // Notificar entregador sobre nova entrega atribuída
+    try {
+      if (deliverer.pushtoken) {
+        await this.notificationsService.sendPushNotification(
+          [deliverer.pushtoken],
+          'Nova Entrega!',
+          `Pedido #${orderId.substring(0, 8).toUpperCase()} foi atribuído a você`,
+          { orderId, screen: 'DelivererHome' },
+        );
+      }
+    } catch (_) {}
 
     return { id: updated.id, delivererId: updated.delivererid, status: updated.status };
   }
@@ -425,6 +486,22 @@ export class OrdersService {
       data: { status: dto.status },
       select: { id: true, status: true, updatedat: true },
     });
+
+    // Notificar cliente sobre atualização do entregador
+    try {
+      const client = await this.prisma.user.findUnique({
+        where: { id: order.userid },
+        select: { pushtoken: true },
+      });
+      if (client?.pushtoken) {
+        await this.notificationsService.sendPushNotification(
+          [client.pushtoken],
+          'Atualização do Pedido',
+          `Seu pedido está: ${dto.status}`,
+          { orderId, screen: 'MyOrders' },
+        );
+      }
+    } catch (_) {}
 
     return { id: updated.id, status: updated.status, updatedAt: updated.updatedat };
   }

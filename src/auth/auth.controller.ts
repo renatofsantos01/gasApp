@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, UseGuards, Request, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -62,5 +62,13 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired code' })
   async verifyPhone(@Request() req: any, @Body() dto: VerifyPhoneDto) {
     return this.authService.verifyPhone(req.user.userId, dto.code);
+  }
+
+  @Patch('push-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save Expo push notification token' })
+  async savePushToken(@Request() req: any, @Body() body: { token: string }) {
+    return this.authService.savePushToken(req.user.userId, body.token);
   }
 }
