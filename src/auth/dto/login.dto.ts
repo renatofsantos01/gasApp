@@ -10,7 +10,10 @@ export class LoginDto {
   @IsString()
   password: string;
 
-  @ApiPropertyOptional({ example: 'demo', description: 'Tenant ID (null for superadmin)' })
+  @ApiPropertyOptional({
+    example: 'demo',
+    description: 'Tenant ID (null for superadmin)',
+  })
   @IsString()
   @IsOptional()
   tenantId?: string;

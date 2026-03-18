@@ -34,7 +34,7 @@ export class OrdersService {
 
     // Verify all products exist and calculate totals
     let totalAmount = 0;
-    const orderItemsData = [];
+    const orderItemsData: { productid: string; quantity: number; unitprice: number; subtotal: number }[] = [];
 
     for (const item of dto.items) {
       const product = await this.prisma.product.findUnique({

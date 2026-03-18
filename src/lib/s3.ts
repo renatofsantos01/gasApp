@@ -41,21 +41,27 @@ export async function getFileUrl(
   cloud_storage_path: string,
   isPublic = true,
 ): Promise<string> {
-  const { bucketName } = getBucketConfig();
-  const client = getS3Client();
-  const region = await client.config.region();
+  const { bucketName, publicUrl } = getBucketConfig();
+
+  if (isPublic && publicUrl) {
+    // R2 / custom public domain
+    return `${publicUrl}/${cloud_storage_path}`;
+  }
 
   if (isPublic) {
+    // Fallback AWS S3 public URL
+    const client = getS3Client();
+    const region = await client.config.region();
     return `https://${bucketName}.s3.${region}.amazonaws.com/${cloud_storage_path}`;
   }
 
-  // For private files, generate signed URL
+  // Private: signed URL
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: cloud_storage_path,
   });
 
-  return await getSignedUrl(client, command, { expiresIn: 3600 });
+  return await getSignedUrl(getS3Client(), command, { expiresIn: 3600 });
 }
 
 export async function deleteFile(

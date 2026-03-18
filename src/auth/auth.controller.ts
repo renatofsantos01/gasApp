@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { VerifyPhoneDto } from './dto/verify-phone.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -31,8 +32,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@Request() req: any) {
     return this.authService.getProfile(req.user.userId);
   }
@@ -41,9 +40,27 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user profile' })
-  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.userId, dto);
+  }
+
+  @Post('send-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Send phone verification SMS' })
+  @ApiResponse({ status: 200, description: 'Code sent successfully' })
+  @ApiResponse({ status: 400, description: 'No phone registered or already verified' })
+  async sendPhoneVerification(@Request() req: any) {
+    return this.authService.sendPhoneVerification(req.user.userId);
+  }
+
+  @Post('verify-phone')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify phone number with SMS code' })
+  @ApiResponse({ status: 200, description: 'Phone verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired code' })
+  async verifyPhone(@Request() req: any, @Body() dto: VerifyPhoneDto) {
+    return this.authService.verifyPhone(req.user.userId, dto.code);
   }
 }

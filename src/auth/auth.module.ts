@@ -5,11 +5,13 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
+import { SmsModule } from '../sms/sms.module';
 
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
+    SmsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'distribuidora-gas-secret-key-2024',
       signOptions: { expiresIn: '7d' },

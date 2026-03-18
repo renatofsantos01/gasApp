@@ -4,7 +4,8 @@
 generator client {
     provider = "prisma-client-js"
     binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-    output = "/home/ubuntu/distribuidora_gas_app/nodejs_space/node_modules/.prisma/client"
+    output = "../node_modules/.prisma/client"
+    previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -44,7 +45,10 @@ model user {
   name      String
   email     String    
   password  String
-  phone     String?
+  phone                       String?
+  phoneverified               Boolean   @default(true)   // true por padrão para usuários existentes
+  phoneverificationcode       String?
+  phoneverificationexpiresat  DateTime?
   role      String    // 'superadmin' (gerencia tenants), 'admin' (admin da distribuidora), 'client' (cliente final)
   createdat DateTime  @default(now())
   addresses address[]

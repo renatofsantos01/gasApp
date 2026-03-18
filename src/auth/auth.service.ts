@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { SmsService } from '../sms/sms.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -11,10 +12,10 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private smsService: SmsService,
   ) {}
 
   async register(dto: RegisterDto) {
-    // Verifica tenant
     if (!dto.tenantId) {
       throw new ConflictException('Tenant ID is required');
     }
@@ -27,13 +28,12 @@ export class AuthService {
       throw new ConflictException('Invalid or inactive tenant');
     }
 
-    // Verifica se email já existe DENTRO desse tenant
     const existingUser = await this.prisma.user.findUnique({
-      where: { 
+      where: {
         email_tenantid: {
           email: dto.email,
           tenantid: dto.tenantId,
-        }
+        },
       },
     });
 
@@ -43,6 +43,9 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    // Novo usuário com phone começa não verificado
+    const phoneVerified = !dto.phone;
+
     const user = await this.prisma.user.create({
       data: {
         tenantid: dto.tenantId,
@@ -50,6 +53,7 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         phone: dto.phone,
+        phoneverified: phoneVerified,
         role: 'client',
         addresses: dto.address
           ? {
@@ -79,18 +83,16 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         tenantId: user.tenantid,
+        phoneVerified: user.phoneverified,
       },
     };
   }
 
   async login(dto: LoginDto) {
-    // Busca usuário pelo email e tenantId
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: {
-        email_tenantid: {
-          email: dto.email,
-          tenantid: dto.tenantId ?? null,
-        }
+        email: dto.email,
+        tenantid: dto.tenantId ?? null,
       },
     });
 
@@ -98,7 +100,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Se o usuário tem tenant, verifica se está ativo
     if (user.tenantid) {
       const tenant = await this.prisma.tenant.findUnique({
         where: { id: user.tenantid },
@@ -126,6 +127,7 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         tenantId: user.tenantid,
+        phoneVerified: user.phoneverified,
       },
     };
   }
@@ -139,6 +141,7 @@ export class AuthService {
         email: true,
         phone: true,
         role: true,
+        phoneverified: true,
         createdat: true,
       },
     });
@@ -147,7 +150,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    return { ...user, phoneVerified: user.phoneverified };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -168,10 +171,63 @@ export class AuthService {
         email: true,
         phone: true,
         role: true,
+        phoneverified: true,
       },
     });
 
-    return user;
+    return { ...user, phoneVerified: user.phoneverified };
+  }
+
+  async sendPhoneVerification(userId: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) throw new UnauthorizedException('Usuário não encontrado');
+    if (!user.phone) throw new BadRequestException('Nenhum telefone cadastrado');
+    if (user.phoneverified) throw new ConflictException('Telefone já verificado');
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresat = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        phoneverificationcode: code,
+        phoneverificationexpiresat: expiresat,
+      },
+    });
+
+    await this.smsService.sendSms(
+      user.phone,
+      `Seu código de verificação é: ${code}. Válido por 10 minutos.`,
+    );
+
+    return { message: 'Código enviado com sucesso' };
+  }
+
+  async verifyPhone(userId: string, code: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) throw new UnauthorizedException('Usuário não encontrado');
+    if (user.phoneverified) return { message: 'Telefone já verificado' };
+
+    if (!user.phoneverificationcode || user.phoneverificationcode !== code) {
+      throw new BadRequestException('Código inválido');
+    }
+
+    if (user.phoneverificationexpiresat && user.phoneverificationexpiresat < new Date()) {
+      throw new BadRequestException('Código expirado. Solicite um novo código.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        phoneverified: true,
+        phoneverificationcode: null,
+        phoneverificationexpiresat: null,
+      },
+    });
+
+    return { message: 'Telefone verificado com sucesso' };
   }
 
   private generateToken(userId: string, email: string, role: string, tenantId: string | null): string {
