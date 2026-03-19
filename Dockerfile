@@ -14,4 +14,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "echo '=== /app/dist contents ===' && ls -laR /app/dist/ && echo '=== starting app ===' && node dist/main"]
