@@ -6,6 +6,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,8 +39,37 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   });
 
   const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const fetchAddressByCep = async (cep: string) => {
+    const cleanCep = cep?.replace?.(/\D/g, '') ?? '';
+    if (cleanCep.length !== 8) return;
+    try {
+      setLoadingCep(true);
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      if (data?.erro) { Alert.alert('CEP não encontrado'); return; }
+      setFormData((prev) => ({
+        ...prev,
+        street: data?.logradouro ?? prev.street,
+        neighborhood: data?.bairro ?? prev.neighborhood,
+        city: data?.localidade ?? prev.city,
+        state: data?.uf ?? prev.state,
+      }));
+    } catch {
+      Alert.alert('Erro', 'Não foi possível buscar o CEP');
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const handleCepChange = (text: string) => {
+    updateField('zipcode', text);
+    const clean = text?.replace?.(/\D/g, '') ?? '';
+    if (clean.length === 8) fetchAddressByCep(clean);
+  };
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -69,20 +99,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
       newErrors.phone = 'Telefone inválido';
     }
 
-    // Address validations (optional but if filled, must be complete)
-    const hasAddress = validateRequired(formData?.street) || validateRequired(formData?.number);
-    if (hasAddress) {
-      if (!validateRequired(formData?.street)) newErrors.street = 'Rua é obrigatória';
-      if (!validateRequired(formData?.number)) newErrors.number = 'Número é obrigatório';
-      if (!validateRequired(formData?.neighborhood)) newErrors.neighborhood = 'Bairro é obrigatório';
-      if (!validateRequired(formData?.city)) newErrors.city = 'Cidade é obrigatória';
-      if (!validateRequired(formData?.state)) newErrors.state = 'Estado é obrigatório';
-      if (!validateRequired(formData?.zipcode)) {
-        newErrors.zipcode = 'CEP é obrigatório';
-      } else if (!validateCEP(formData?.zipcode)) {
-        newErrors.zipcode = 'CEP inválido';
-      }
+    // Address validations (required)
+    if (!validateRequired(formData?.zipcode)) {
+      newErrors.zipcode = 'CEP é obrigatório';
+    } else if (!validateCEP(formData?.zipcode)) {
+      newErrors.zipcode = 'CEP inválido';
     }
+    if (!validateRequired(formData?.street)) newErrors.street = 'Rua é obrigatória';
+    if (!validateRequired(formData?.number)) newErrors.number = 'Número é obrigatório';
+    if (!validateRequired(formData?.neighborhood)) newErrors.neighborhood = 'Bairro é obrigatório';
+    if (!validateRequired(formData?.city)) newErrors.city = 'Cidade é obrigatória';
+    if (!validateRequired(formData?.state)) newErrors.state = 'Estado é obrigatório';
 
     setErrors(newErrors);
     return Object.keys(newErrors ?? {}).length === 0;
@@ -93,23 +120,20 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
     setLoading(true);
     try {
-      const hasAddress = validateRequired(formData?.street);
       await register({
         name: formData?.name,
         email: formData?.email,
         password: formData?.password,
         phone: formData?.phone,
-        address: hasAddress
-          ? {
-            street: formData?.street,
-            number: formData?.number,
-            complement: formData?.complement || undefined,
-            neighborhood: formData?.neighborhood,
-            city: formData?.city,
-            state: formData?.state,
-            zipcode: formData?.zipcode,
-          }
-          : undefined,
+        address: {
+          street: formData?.street,
+          number: formData?.number,
+          complement: formData?.complement || undefined,
+          neighborhood: formData?.neighborhood,
+          city: formData?.city,
+          state: formData?.state,
+          zipcode: formData?.zipcode,
+        },
       });
     } catch (error: any) {
       const raw = error?.response?.data?.message;
@@ -208,20 +232,23 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             {errors?.confirmPassword && <HelperText type="error">{errors?.confirmPassword}</HelperText>}
 
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              Endereço (opcional)
+              Endereço *
             </Text>
 
-            <TextInput
-              label="CEP"
-              value={formData?.zipcode}
-              onChangeText={(text) => updateField('zipcode', text)}
-              mode="outlined"
-              style={styles.input}
-              keyboardType="numeric"
-              placeholder="12345-678"
-              error={!!errors?.zipcode}
-              disabled={loading}
-            />
+            <View style={styles.cepRow}>
+              <TextInput
+                label="CEP *"
+                value={formData?.zipcode}
+                onChangeText={handleCepChange}
+                mode="outlined"
+                style={[styles.input, styles.cepInput]}
+                keyboardType="numeric"
+                placeholder="12345-678"
+                error={!!errors?.zipcode}
+                disabled={loading}
+              />
+              {loadingCep && <ActivityIndicator style={styles.cepLoader} color={theme.colors.primary} />}
+            </View>
             {errors?.zipcode && <HelperText type="error">{errors?.zipcode}</HelperText>}
 
             <View style={styles.row}>
@@ -377,5 +404,16 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     alignSelf: 'center',
+  },
+  cepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cepInput: {
+    flex: 1,
+  },
+  cepLoader: {
+    marginLeft: 8,
+    marginBottom: 4,
   },
 });

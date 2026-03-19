@@ -9,6 +9,7 @@ import { AdminOrdersScreen } from '../screens/admin/AdminOrdersScreen';
 import { AdminCustomersScreen } from '../screens/admin/AdminCustomersScreen';
 import { AdminReportsScreen } from '../screens/admin/AdminReportsScreen';
 import { AdminSettingsScreen } from '../screens/admin/AdminSettingsScreen';
+import { AdminCouponsScreen } from '../screens/admin/AdminCouponsScreen';
 import { OrderDetailsScreen } from '../screens/OrderDetailsScreen';
 import { theme } from '../theme';
 
@@ -17,6 +18,7 @@ export type AdminTabParamList = {
   Products: undefined;
   Orders: undefined;
   Customers: undefined;
+  Coupons: undefined;
   Reports: undefined;
   Settings: undefined;
   OrderDetails: { orderId: string };
@@ -64,6 +66,14 @@ const AdminTabs = () => (
       options={{
         tabBarLabel: 'Clientes',
         tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+      }}
+    />
+    <Tab.Screen
+      name="Coupons"
+      component={AdminCouponsScreen}
+      options={{
+        tabBarLabel: 'Cupons',
+        tabBarIcon: ({ color, size }) => <Ionicons name="pricetag" size={size} color={color} />,
       }}
     />
     <Tab.Screen

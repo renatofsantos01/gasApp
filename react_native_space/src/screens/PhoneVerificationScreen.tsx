@@ -15,7 +15,7 @@ type PhoneVerificationScreenProps = {
 const RESEND_COOLDOWN = 60;
 
 export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = ({ navigation }) => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -134,6 +134,24 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
             style={styles.resendButton}
           >
             {cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar código'}
+          </Button>
+
+          <Button
+            mode="text"
+            onPress={() =>
+              Alert.alert(
+                'Alterar número',
+                'Para alterar o telefone, você precisa sair e fazer login novamente.',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Sair', style: 'destructive', onPress: () => logout?.() },
+                ],
+              )
+            }
+            style={styles.resendButton}
+            textColor="#757575"
+          >
+            Alterar número de telefone
           </Button>
         </View>
       </View>
