@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -9,6 +9,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -196,10 +198,11 @@ export class AuthService {
       },
     });
 
-    await this.smsService.sendSms(
+    // Fire and forget — retorna imediatamente sem esperar o SMS
+    this.smsService.sendSms(
       user.phone,
       `Seu código de verificação é: ${code}. Válido por 10 minutos.`,
-    );
+    ).catch((err) => this.logger.error(`Falha ao enviar SMS: ${err.message}`));
 
     return { message: 'Código enviado com sucesso' };
   }
