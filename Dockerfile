@@ -7,11 +7,8 @@ RUN npm install --include=dev
 
 COPY . .
 RUN npx prisma generate
-RUN ./node_modules/.bin/tsc -p tsconfig.build.json && ls -laR /app/dist/
-RUN npm prune --omit=dev
 
 ENV NODE_ENV=production
-
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["./node_modules/.bin/ts-node", "-r", "tsconfig-paths/register", "src/main.ts"]
