@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class TenantService {
@@ -37,7 +38,7 @@ export class TenantService {
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ConflictException(`Subdomain "${dto.subdomain}" already in use`);
       }
       throw err;
@@ -49,7 +50,7 @@ export class TenantService {
     try {
       return await this.prisma.tenant.update({ where: { id }, data: dto });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ConflictException(`Subdomain "${dto.subdomain}" already in use`);
       }
       throw err;
