@@ -7,7 +7,7 @@ RUN npm install --include=dev
 
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && ls -la /app/dist/
 RUN npm prune --omit=dev
 
 ENV NODE_ENV=production
