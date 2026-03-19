@@ -64,8 +64,9 @@ async function bootstrap() {
     customfavIcon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🔥</text></svg>',
   });
 
-  await app.listen(3000);
-  console.log(`Application is running on: http://localhost:3000`);
-  console.log(`Swagger documentation: http://localhost:3000/${swaggerPath}`);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on port: ${port}`);
+  console.log(`Swagger documentation: http://localhost:${port}/${swaggerPath}`);
 }
 bootstrap();
