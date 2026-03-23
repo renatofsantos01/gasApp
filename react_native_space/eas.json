@@ -24,6 +24,11 @@
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://gasapp-production-9773.up.railway.app",
+        "EXPO_PUBLIC_EAS_PROJECT_ID": "bf284fc2-a493-4ebf-acb0-de1ab1c203dc",
+        "EXPO_PUBLIC_TENANT_SUBDOMAIN": "demo"
       }
     }
   },

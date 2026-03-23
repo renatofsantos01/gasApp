@@ -65,10 +65,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? 'bf284fc2-a493-4ebf-acb0-de1ab1c203dc' },
     },
-    updates: {
-      // preencher após executar: eas update:configure
-      // url: 'https://u.expo.dev/<EAS_PROJECT_ID>',
-    },
-    runtimeVersion: { policy: 'sdkVersion' },
   };
 };
