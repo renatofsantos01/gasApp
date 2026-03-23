@@ -75,7 +75,7 @@ const AdminTabs = () => (
       component={AdminDeliverersScreen}
       options={{
         tabBarLabel: 'Entregadores',
-        tabBarIcon: ({ color, size }) => <Ionicons name="bicycle" size={size} color={color} />,
+        tabBarIcon: ({ color, size }) => <Ionicons name="car-outline" size={size} color={color} />,
       }}
     />
     <Tab.Screen
