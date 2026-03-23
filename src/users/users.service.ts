@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -106,12 +107,55 @@ export class UsersService {
   }
 
   async findAllDeliverers(tenantId: string) {
-    const deliverers = await this.prisma.user.findMany({
+    return this.prisma.user.findMany({
       where: { role: 'entregador', tenantid: tenantId },
       select: { id: true, name: true, email: true, phone: true },
       orderBy: { name: 'asc' },
     });
-    return deliverers;
+  }
+
+  async createDeliverer(dto: { name: string; email: string; password: string; phone?: string }, tenantId: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email_tenantid: { email: dto.email, tenantid: tenantId } },
+    });
+    if (existing) throw new ConflictException('Email já cadastrado');
+
+    const hashed = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        tenantid: tenantId,
+        name: dto.name,
+        email: dto.email,
+        password: hashed,
+        phone: dto.phone,
+        role: 'entregador',
+        phoneverified: true,
+      },
+    });
+    return { id: user.id, name: user.name, email: user.email, phone: user.phone };
+  }
+
+  async updateDeliverer(id: string, dto: { name?: string; phone?: string; password?: string }, tenantId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user || user.tenantid !== tenantId || user.role !== 'entregador') {
+      throw new NotFoundException('Entregador não encontrado');
+    }
+    const data: any = {};
+    if (dto.name) data.name = dto.name;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.password) data.password = await bcrypt.hash(dto.password, 10);
+
+    const updated = await this.prisma.user.update({ where: { id }, data });
+    return { id: updated.id, name: updated.name, email: updated.email, phone: updated.phone };
+  }
+
+  async deleteDeliverer(id: string, tenantId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user || user.tenantid !== tenantId || user.role !== 'entregador') {
+      throw new NotFoundException('Entregador não encontrado');
+    }
+    await this.prisma.user.delete({ where: { id } });
+    return { message: 'Entregador removido' };
   }
 
   async findUserOrders(userId: string, tenantId: string) {

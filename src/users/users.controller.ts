@@ -1,8 +1,22 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+
+class CreateDelivererDto {
+  @IsString() name: string;
+  @IsEmail() email: string;
+  @IsString() @MinLength(6) password: string;
+  @IsOptional() @IsString() phone?: string;
+}
+
+class UpdateDelivererDto {
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() @MinLength(6) password?: string;
+}
 
 @ApiTags('Users')
 @Controller('users')
@@ -15,6 +29,24 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all deliverers (Admin only)' })
   async findAllDeliverers(@Request() req: any) {
     return this.usersService.findAllDeliverers(req.user.tenantId);
+  }
+
+  @Post('deliverers')
+  @ApiOperation({ summary: 'Create a deliverer (Admin only)' })
+  async createDeliverer(@Request() req: any, @Body() dto: CreateDelivererDto) {
+    return this.usersService.createDeliverer(dto, req.user.tenantId);
+  }
+
+  @Put('deliverers/:id')
+  @ApiOperation({ summary: 'Update a deliverer (Admin only)' })
+  async updateDeliverer(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateDelivererDto) {
+    return this.usersService.updateDeliverer(id, dto, req.user.tenantId);
+  }
+
+  @Delete('deliverers/:id')
+  @ApiOperation({ summary: 'Delete a deliverer (Admin only)' })
+  async deleteDeliverer(@Request() req: any, @Param('id') id: string) {
+    return this.usersService.deleteDeliverer(id, req.user.tenantId);
   }
 
   @Get('clients')
