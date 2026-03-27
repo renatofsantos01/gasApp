@@ -3,23 +3,42 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, LogOut, LayoutDashboard, Tag } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Building2, LogOut, LayoutDashboard, Tag, ShoppingBag, Package, Users, BarChart2 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(localStorage.getItem('admin_role'));
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_role');
+    localStorage.removeItem('admin_tenantId');
     document.cookie = 'admin_token=; path=/; max-age=0';
     router.push('/login');
   };
 
-  const navItems = [
+  const superadminNav = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/tenants', label: 'Distribuidoras', icon: Building2 },
     { href: '/dashboard/coupons', label: 'Cupons', icon: Tag },
   ];
+
+  const adminNav = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/orders', label: 'Pedidos', icon: ShoppingBag },
+    { href: '/dashboard/products', label: 'Produtos', icon: Package },
+    { href: '/dashboard/deliverers', label: 'Entregadores', icon: Users },
+    { href: '/dashboard/coupons', label: 'Cupons', icon: Tag },
+    { href: '/dashboard/reports', label: 'Relatórios', icon: BarChart2 },
+  ];
+
+  const navItems = role === 'admin' ? adminNav : superadminNav;
 
   return (
     <div className="flex min-h-screen bg-gray-50">

@@ -19,6 +19,8 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_role');
+      localStorage.removeItem('admin_tenantId');
       window.location.href = '/login';
     }
     return Promise.reject(err);
@@ -26,8 +28,11 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }).then((r) => r.data),
+  login: (email: string, password: string, tenantId?: string) =>
+    api.post('/auth/login', { email, password, tenantId }).then((r) => r.data),
+
+  getTenantBySubdomain: (subdomain: string) =>
+    api.get(`/tenant/subdomain/${subdomain}`).then((r) => r.data),
 };
 
 export const tenantsApi = {
@@ -37,4 +42,37 @@ export const tenantsApi = {
   update: (id: string, data: unknown) => api.put(`/tenant/${id}`, data).then((r) => r.data),
   toggleActive: (id: string) => api.patch(`/tenant/${id}/toggle-active`).then((r) => r.data),
   remove: (id: string) => api.delete(`/tenant/${id}`).then((r) => r.data),
+};
+
+export const ordersApi = {
+  findAll: () => api.get('/orders').then((r) => r.data),
+  updateStatus: (id: string, status: string) =>
+    api.patch(`/orders/${id}/status`, { status }).then((r) => r.data),
+  assignDeliverer: (orderId: string, delivererId: string) =>
+    api.post(`/orders/${orderId}/assign`, { delivererId }).then((r) => r.data),
+  cancel: (id: string, cancelReason: string) =>
+    api.patch(`/orders/${id}/cancel`, { cancelReason }).then((r) => r.data),
+};
+
+export const productsApi = {
+  findAll: () => api.get('/products').then((r) => r.data),
+  create: (data: unknown) => api.post('/products', data).then((r) => r.data),
+  update: (id: string, data: unknown) => api.put(`/products/${id}`, data).then((r) => r.data),
+  remove: (id: string) => api.delete(`/products/${id}`).then((r) => r.data),
+};
+
+export const deliverersApi = {
+  findAll: () => api.get('/users/deliverers').then((r) => r.data),
+  create: (data: unknown) => api.post('/users/deliverers', data).then((r) => r.data),
+  update: (id: string, data: unknown) => api.put(`/users/deliverers/${id}`, data).then((r) => r.data),
+  remove: (id: string) => api.delete(`/users/deliverers/${id}`).then((r) => r.data),
+};
+
+export const reportsApi = {
+  getOrders: (startDate: string, endDate: string) =>
+    api.get('/reports/orders', { params: { startDate, endDate } }).then((r) => r.data),
+  getRevenue: (startDate: string, endDate: string) =>
+    api.get('/reports/revenue', { params: { startDate, endDate } }).then((r) => r.data),
+  getTopProducts: (startDate: string, endDate: string) =>
+    api.get('/reports/top-products', { params: { startDate, endDate, limit: 10 } }).then((r) => r.data),
 };
