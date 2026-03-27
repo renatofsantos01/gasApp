@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -8,8 +8,21 @@ import { DeliveryStatusDto } from './dto/delivery-status.dto';
 import { CouponsService } from '../coupons/coupons.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
+// Fórmula de Haversine — distância em km entre dois pontos GPS
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private prisma: PrismaService,
     private couponsService: CouponsService,
@@ -137,6 +150,79 @@ export class OrdersService {
         where: { id: appliedCoupon.id },
         data: { usedcount: { increment: 1 } },
       });
+    }
+
+    // Auto-atribuição ao entregador disponível mais próximo
+    try {
+      const deliverers = await this.prisma.user.findMany({
+        where: {
+          tenantid: user.tenantid,
+          role: 'entregador',
+          available: true,
+          latitude: { not: null },
+          longitude: { not: null },
+        },
+        select: { id: true, pushtoken: true, latitude: true, longitude: true, name: true },
+      });
+
+      if (deliverers.length > 0) {
+        // Buscar coordenadas do endereço do pedido via ViaCEP + nominatim (aproximação por CEP)
+        // Usamos lat/lng do próprio endereço se disponível, senão tentamos geocodificar
+        const orderAddress = await this.prisma.address.findUnique({
+          where: { id: dto.addressId },
+          select: { zipcode: true },
+        });
+
+        let orderLat: number | null = null;
+        let orderLon: number | null = null;
+
+        if (orderAddress?.zipcode) {
+          try {
+            const cleanCep = orderAddress.zipcode.replace(/\D/g, '');
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?postalcode=${cleanCep}&country=BR&format=json&limit=1`,
+              { headers: { 'User-Agent': 'GasApp/1.0' } },
+            );
+            const geoData = await geoRes.json();
+            if (geoData?.[0]) {
+              orderLat = parseFloat(geoData[0].lat);
+              orderLon = parseFloat(geoData[0].lon);
+            }
+          } catch (e) {
+            this.logger.warn('[AutoAssign] Falha ao geocodificar CEP:', e);
+          }
+        }
+
+        let nearestDeliverer = deliverers[0];
+
+        if (orderLat !== null && orderLon !== null) {
+          let minDist = Infinity;
+          for (const d of deliverers) {
+            const dist = haversineKm(d.latitude!, d.longitude!, orderLat, orderLon);
+            if (dist < minDist) {
+              minDist = dist;
+              nearestDeliverer = d;
+            }
+          }
+          this.logger.log(`[AutoAssign] Entregador mais próximo: ${nearestDeliverer.name} (${minDist.toFixed(1)} km)`);
+        }
+
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { delivererid: nearestDeliverer.id },
+        });
+
+        if (nearestDeliverer.pushtoken) {
+          await this.notificationsService.sendPushNotification(
+            [nearestDeliverer.pushtoken],
+            'Nova Entrega!',
+            `Pedido #${order.id.substring(0, 8).toUpperCase()} foi atribuído a você`,
+            { orderId: order.id, screen: 'DelivererHome' },
+          );
+        }
+      }
+    } catch (e) {
+      this.logger.warn('[AutoAssign] Falha na auto-atribuição:', e);
     }
 
     // Notificar admins do tenant sobre novo pedido

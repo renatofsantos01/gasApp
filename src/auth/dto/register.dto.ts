@@ -3,7 +3,9 @@ import {
   IsNotEmpty,
   IsString,
   MinLength,
-  IsOptional, ValidateNested
+  IsOptional,
+  IsBoolean,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -75,4 +77,8 @@ export class RegisterDto {
   @Type(() => AddressDto)
   @IsOptional()
   address?: AddressDto;
+
+  @ApiProperty({ example: true, description: 'Aceite dos termos LGPD' })
+  @IsBoolean()
+  lgpdAccepted: boolean;
 }

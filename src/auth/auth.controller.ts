@@ -80,4 +80,20 @@ export class AuthController {
   async logout(@Request() req: any) {
     return this.authService.logout(req.user.userId);
   }
+
+  @Patch('availability')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle deliverer availability' })
+  async setAvailability(@Request() req: any, @Body() body: { available: boolean }) {
+    return this.authService.setAvailability(req.user.userId, body.available);
+  }
+
+  @Patch('location')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update deliverer GPS location' })
+  async updateLocation(@Request() req: any, @Body() body: { latitude: number; longitude: number }) {
+    return this.authService.updateLocation(req.user.userId, body.latitude, body.longitude);
+  }
 }

@@ -22,6 +22,10 @@ export class AuthService {
       throw new ConflictException('Tenant ID is required');
     }
 
+    if (!dto.lgpdAccepted) {
+      throw new BadRequestException('É necessário aceitar os termos de tratamento de dados');
+    }
+
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: dto.tenantId },
     });
@@ -40,7 +44,16 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Este e-mail já está cadastrado');
+    }
+
+    if (dto.phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: { phone: dto.phone, tenantid: dto.tenantId },
+      });
+      if (existingPhone) {
+        throw new ConflictException('Este telefone já está cadastrado');
+      }
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -57,6 +70,7 @@ export class AuthService {
         phone: dto.phone,
         phoneverified: phoneVerified,
         role: 'client',
+        lgpdacceptedat: new Date(),
         addresses: dto.address
           ? {
               create: {
@@ -244,9 +258,28 @@ export class AuthService {
   async logout(userId: string): Promise<{ message: string }> {
     await this.prisma.user.update({
       where: { id: userId },
-      data: { pushtoken: null },
+      data: { pushtoken: null, available: false },
     });
     return { message: 'Logout realizado' };
+  }
+
+  async setAvailability(userId: string, available: boolean): Promise<{ available: boolean }> {
+    const data: any = { available };
+    if (!available) {
+      data.latitude = null;
+      data.longitude = null;
+      data.locationupdatedat = null;
+    }
+    await this.prisma.user.update({ where: { id: userId }, data });
+    return { available };
+  }
+
+  async updateLocation(userId: string, latitude: number, longitude: number): Promise<{ message: string }> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { latitude, longitude, locationupdatedat: new Date() },
+    });
+    return { message: 'Localização atualizada' };
   }
 
   private generateToken(userId: string, email: string, role: string, tenantId: string | null): string {

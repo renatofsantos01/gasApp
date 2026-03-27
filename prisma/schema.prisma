@@ -52,6 +52,11 @@ model user {
   phoneverificationexpiresat  DateTime?
   role      String    // 'superadmin', 'admin', 'client', 'entregador'
   pushtoken String?   // Expo Push Token
+  lgpdacceptedat DateTime? // Data/hora do aceite dos termos LGPD
+  available  Boolean  @default(false) // Entregador disponível para receber pedidos
+  latitude   Float?   // Última localização GPS do entregador
+  longitude  Float?   // Última localização GPS do entregador
+  locationupdatedat DateTime? // Quando a localização foi atualizada pela última vez
   createdat DateTime  @default(now())
   addresses       address[]
   orders          order[]   @relation("UserOrders")
@@ -60,6 +65,7 @@ model user {
   @@unique([email, tenantid]) // Email pode repetir entre tenants, mas não dentro do mesmo tenant
   @@index([tenantid])
   @@index([email])
+  @@index([available])
 }
 
 model address {
