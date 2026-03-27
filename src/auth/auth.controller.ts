@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, UseGuards, Request, Patch, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -70,5 +70,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Save Expo push notification token' })
   async savePushToken(@Request() req: any, @Body() body: { token: string }) {
     return this.authService.savePushToken(req.user.userId, body.token);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Logout and clear push token' })
+  async logout(@Request() req: any) {
+    return this.authService.logout(req.user.userId);
   }
 }

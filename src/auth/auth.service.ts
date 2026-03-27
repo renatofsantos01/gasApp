@@ -241,6 +241,14 @@ export class AuthService {
     return { message: 'Token salvo' };
   }
 
+  async logout(userId: string): Promise<{ message: string }> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { pushtoken: null },
+    });
+    return { message: 'Logout realizado' };
+  }
+
   private generateToken(userId: string, email: string, role: string, tenantId: string | null): string {
     const payload = { sub: userId, email, role, tenantid: tenantId };
     return this.jwtService.sign(payload);
