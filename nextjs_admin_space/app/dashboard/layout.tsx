@@ -26,7 +26,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const superadminNav = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/tenants', label: 'Distribuidoras', icon: Building2 },
-    { href: '/dashboard/coupons', label: 'Cupons', icon: Tag },
   ];
 
   const adminNav = [
