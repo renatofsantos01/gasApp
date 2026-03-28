@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Button, Chip, Divider } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, Linking, TouchableOpacity, Platform } from 'react-native';
+import { Text, Button, Chip, Divider, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { DelivererStackParamList } from '../../navigation/DelivererNavigator';
@@ -46,6 +46,41 @@ export const DelivererOrderDetailsScreen: React.FC<Props> = ({ route, navigation
     );
   };
 
+  const openInMaps = () => {
+    const addr = order.address;
+    if (!addr) return;
+    const query = encodeURIComponent(
+      `${addr.street}, ${addr.number}${addr.complement ? ` ${addr.complement}` : ''}, ${addr.neighborhood}, ${addr.city} - ${addr.state}, ${addr.zipcode}`
+    );
+
+    const options: { text: string; onPress: () => void }[] = [
+      {
+        text: 'Google Maps',
+        onPress: () => Linking.openURL(`https://maps.google.com/?q=${query}`),
+      },
+      {
+        text: 'Waze',
+        onPress: () => Linking.openURL(`https://waze.com/ul?q=${query}&navigate=yes`),
+      },
+    ];
+
+    if (Platform.OS === 'ios') {
+      options.push({
+        text: 'Apple Maps',
+        onPress: () => Linking.openURL(`maps://maps.apple.com/?q=${query}`),
+      });
+    }
+
+    Alert.alert(
+      'Navegar até o endereço',
+      'Escolha o app de navegação:',
+      [
+        ...options.map((o) => ({ text: o.text, onPress: o.onPress })),
+        { text: 'Cancelar', style: 'cancel' as const },
+      ]
+    );
+  };
+
   const canMarkOutForDelivery =
     order.status === 'Pendente' || order.status === 'Em Preparo';
   const canMarkDelivered = order.status === 'Saiu para Entrega';
@@ -77,8 +112,11 @@ export const DelivererOrderDetailsScreen: React.FC<Props> = ({ route, navigation
         <Divider style={styles.divider} />
 
         {/* Endereço */}
-        <View style={styles.section}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Endereço de Entrega</Text>
+        <TouchableOpacity style={styles.section} onPress={openInMaps} activeOpacity={0.7}>
+          <View style={styles.addressHeader}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Endereço de Entrega</Text>
+            <IconButton icon="navigation" size={20} iconColor={theme.colors.primary} style={styles.navIcon} />
+          </View>
           <Text variant="bodyMedium">
             {order.address?.street}, {order.address?.number}
             {order.address?.complement ? ` — ${order.address.complement}` : ''}
@@ -87,7 +125,8 @@ export const DelivererOrderDetailsScreen: React.FC<Props> = ({ route, navigation
             {order.address?.neighborhood} — {order.address?.city}/{order.address?.state}
           </Text>
           <Text variant="bodyMedium">CEP: {order.address?.zipcode}</Text>
-        </View>
+          <Text variant="bodySmall" style={styles.tapHint}>Toque para navegar</Text>
+        </TouchableOpacity>
 
         <Divider style={styles.divider} />
 
@@ -186,7 +225,10 @@ const styles = StyleSheet.create({
   },
   title: { fontWeight: 'bold' },
   section: { marginVertical: 8 },
-  sectionTitle: { fontWeight: '600', marginBottom: 6, color: theme.colors.primary },
+  sectionTitle: { fontWeight: '600', marginBottom: 6, color: theme.colors.primary, flex: 1 },
+  addressHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  navIcon: { margin: 0, padding: 0 },
+  tapHint: { color: theme.colors.primary, marginTop: 4, fontStyle: 'italic' },
   secondary: { color: '#666', marginTop: 2 },
   divider: { marginVertical: 12 },
   itemRow: {
