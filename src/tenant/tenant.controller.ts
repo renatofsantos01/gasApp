@@ -21,6 +21,7 @@ export class TenantController {
     return {
       id: tenant.id,
       appName: tenant.appname,
+      companyName: tenant.companyname,
       logoUrl: tenant.logourl,
       splashScreenUrl: tenant.splashscreenurl,
       primaryColor: tenant.primarycolor,
