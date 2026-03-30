@@ -53,6 +53,8 @@ model user {
   role      String    // 'superadmin', 'admin', 'client', 'entregador'
   pushtoken String?   // Expo Push Token
   lgpdacceptedat DateTime? // Data/hora do aceite dos termos LGPD
+  passwordresetcode       String?   // Código de reset de senha
+  passwordresetexpiresat  DateTime? // Expiração do código de reset
   available  Boolean  @default(false) // Entregador disponível para receber pedidos
   latitude   Float?   // Última localização GPS do entregador
   longitude  Float?   // Última localização GPS do entregador

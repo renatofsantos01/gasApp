@@ -3,9 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { SmsService } from '../sms/sms.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +18,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private smsService: SmsService,
+    private mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -280,6 +284,64 @@ export class AuthService {
       data: { latitude, longitude, locationupdatedat: new Date() },
     });
     return { message: 'Localização atualizada' };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.user.findFirst({
+      where: { email: dto.email, tenantid: dto.tenantId ?? null },
+      include: { tenant: true },
+    });
+
+    // Retorna mensagem genérica para não revelar se o e-mail existe
+    if (!user) {
+      return { message: 'Se este e-mail estiver cadastrado, você receberá um código em breve.' };
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresat = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordresetcode: code, passwordresetexpiresat: expiresat },
+    });
+
+    const appName = user.tenant?.appname ?? 'Distribuidora de Gás';
+
+    this.mailService.sendPasswordReset(user.email, code, appName)
+      .catch((err) => this.logger.error(`Falha ao enviar e-mail de reset: ${err.message}`));
+
+    return { message: 'Se este e-mail estiver cadastrado, você receberá um código em breve.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.user.findFirst({
+      where: { email: dto.email, tenantid: dto.tenantId ?? null },
+    });
+
+    if (!user || !user.passwordresetcode) {
+      throw new BadRequestException('Código inválido ou expirado.');
+    }
+
+    if (user.passwordresetcode !== dto.code) {
+      throw new BadRequestException('Código inválido.');
+    }
+
+    if (user.passwordresetexpiresat && user.passwordresetexpiresat < new Date()) {
+      throw new BadRequestException('Código expirado. Solicite um novo.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordresetcode: null,
+        passwordresetexpiresat: null,
+      },
+    });
+
+    return { message: 'Senha redefinida com sucesso.' };
   }
 
   private generateToken(userId: string, email: string, role: string, tenantId: string | null): string {
