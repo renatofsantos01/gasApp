@@ -142,6 +142,20 @@ class ApiService {
     await this.api.patch('/auth/push-token', { token });
   }
 
+  async logout(): Promise<void> {
+    await this.api.post('/auth/logout');
+  }
+
+  async forgotPassword(email: string, tenantId?: string): Promise<{ message: string }> {
+    const response = await this.api.post<{ message: string }>('/auth/forgot-password', { email, tenantId });
+    return response.data;
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string, tenantId?: string): Promise<{ message: string }> {
+    const response = await this.api.post<{ message: string }>('/auth/reset-password', { email, code, newPassword, tenantId });
+    return response.data;
+  }
+
   // Products endpoints
   async getProducts(category?: string): Promise<Product[]> {
     const response = await this.api.get<Product[]>('/products', {

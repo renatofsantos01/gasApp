@@ -122,7 +122,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
             <Button
               mode="text"
-              onPress={() => Alert.alert('Info', 'Funcionalidade em desenvolvimento')}
+              onPress={() => navigation.navigate('ForgotPassword')}
               style={styles.forgotButton}
             >
               Esqueci minha senha

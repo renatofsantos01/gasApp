@@ -6,6 +6,8 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { PhoneVerificationScreen } from '../screens/PhoneVerificationScreen';
 import { AppErrorScreen } from '../screens/AppErrorScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from '../screens/ResetPasswordScreen';
 import { ClientNavigator } from './ClientNavigator';
 import { AdminNavigator } from './AdminNavigator';
 import { DelivererNavigator } from './DelivererNavigator';
@@ -16,6 +18,8 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   PhoneVerification: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { email: string };
   ClientApp: undefined;
   AdminApp: undefined;
   DelivererApp: undefined;
@@ -43,6 +47,8 @@ export const RootNavigator: React.FC = () => {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : needsPhoneVerification ? (
         <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
