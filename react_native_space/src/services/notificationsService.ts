@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 // Exibe notificação mesmo com o app em primeiro plano
@@ -10,9 +11,17 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Push tokens reais só funcionam em builds standalone ou dev client, não no Expo Go
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
 class NotificationsService {
   async registerForPushNotifications(): Promise<string | null> {
     if (Platform.OS === 'web') return null;
+
+    if (isExpoGo) {
+      console.log('[Push] Expo Go detectado — registro de push token ignorado');
+      return null;
+    }
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -28,12 +37,16 @@ class NotificationsService {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF5722',
-      });
+      try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF5722',
+        });
+      } catch (error) {
+        console.warn('[Push] Erro ao criar canal Android:', error);
+      }
     }
 
     const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
@@ -42,8 +55,13 @@ class NotificationsService {
       return null;
     }
 
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-    return tokenData.data;
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      return tokenData.data;
+    } catch (error) {
+      console.warn('[Push] Não foi possível obter token de push:', error);
+      return null;
+    }
   }
 }
 

@@ -29,6 +29,7 @@ export interface RegisterRequest {
   phone?: string;
   address?: AddressInput;
   tenantId?: string;
+  lgpdAccepted: boolean;
 }
 
 export interface UpdateProfileRequest {

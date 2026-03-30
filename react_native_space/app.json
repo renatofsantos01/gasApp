@@ -34,7 +34,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Precisamos da sua localização para atribuir pedidos próximos a você."
+        }
+      ]
     ],
     "extra": {}
   }

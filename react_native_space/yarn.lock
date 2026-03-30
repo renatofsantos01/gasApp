@@ -954,7 +954,7 @@
     resolve-from "^5.0.0"
     semver "^7.6.0"
 
-"@expo/image-utils@^0.8.8":
+"@expo/image-utils@^0.8.12", "@expo/image-utils@^0.8.8":
   version "0.8.12"
   resolved "https://registry.npmjs.org/@expo/image-utils/-/image-utils-0.8.12.tgz"
   integrity sha512-3KguH7kyKqq7pNwLb9j6BBdD/bjmNwXZG/HPWT6GWIXbwrvAJt2JNyYTP5agWJ8jbbuys1yuCzmkX+TU6rmI7A==
@@ -3236,6 +3236,13 @@ expo-keep-awake@~15.0.8:
   version "15.0.8"
   resolved "https://registry.npmjs.org/expo-keep-awake/-/expo-keep-awake-15.0.8.tgz"
   integrity sha512-YK9M1VrnoH1vLJiQzChZgzDvVimVoriibiDIFLbQMpjYBnvyfUeHJcin/Gx1a+XgupNXy92EQJLgI/9ZuXajYQ==
+
+expo-location@^55.1.4:
+  version "55.1.4"
+  resolved "https://registry.npmjs.org/expo-location/-/expo-location-55.1.4.tgz"
+  integrity sha512-0QWQ4QP8I6svtGUL895Y8bvKM3nGUWNp/MdCoCQNH3uAuwvLf2TQ6ZDVD3kdlkl2wGGdw6ziHQIYDHL96OlfnA==
+  dependencies:
+    "@expo/image-utils" "^0.8.12"
 
 expo-manifests@~1.0.10:
   version "1.0.10"

@@ -7,8 +7,9 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import { TextInput, Button, Text, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, HelperText, Checkbox, Portal, Modal } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -42,6 +43,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const [loadingCep, setLoadingCep] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [lgpdAccepted, setLgpdAccepted] = useState(false);
+  const [lgpdModalVisible, setLgpdModalVisible] = useState(false);
 
   const fetchAddressByCep = async (cep: string) => {
     const cleanCep = cep?.replace?.(/\D/g, '') ?? '';
@@ -110,6 +113,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     if (!validateRequired(formData?.neighborhood)) newErrors.neighborhood = 'Bairro é obrigatório';
     if (!validateRequired(formData?.city)) newErrors.city = 'Cidade é obrigatória';
     if (!validateRequired(formData?.state)) newErrors.state = 'Estado é obrigatório';
+    if (!lgpdAccepted) newErrors.lgpd = 'Você deve aceitar os termos para continuar';
 
     setErrors(newErrors);
     return Object.keys(newErrors ?? {}).length === 0;
@@ -125,6 +129,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         email: formData?.email,
         password: formData?.password,
         phone: formData?.phone,
+        lgpdAccepted,
         address: {
           street: formData?.street,
           number: formData?.number,
@@ -327,6 +332,21 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
               </View>
             </View>
 
+            <View style={styles.lgpdRow}>
+              <Checkbox
+                status={lgpdAccepted ? 'checked' : 'unchecked'}
+                onPress={() => { setLgpdAccepted(!lgpdAccepted); setErrors((p) => ({ ...p, lgpd: undefined })); }}
+                disabled={loading}
+              />
+              <View style={styles.lgpdTextRow}>
+                <Text variant="bodySmall">Li e aceito os </Text>
+                <TouchableOpacity onPress={() => setLgpdModalVisible(true)}>
+                  <Text variant="bodySmall" style={styles.lgpdLink}>Termos de Tratamento de Dados</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {errors?.lgpd && <HelperText type="error">{errors?.lgpd}</HelperText>}
+
             <Button
               mode="contained"
               onPress={handleRegister}
@@ -349,6 +369,70 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Portal>
+        <Modal
+          visible={lgpdModalVisible}
+          onDismiss={() => setLgpdModalVisible(false)}
+          contentContainerStyle={styles.lgpdModal}
+        >
+          <ScrollView>
+            <Text variant="titleLarge" style={styles.lgpdTitle}>Termos de Tratamento de Dados</Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>1. Responsável pelo Tratamento</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Os dados pessoais coletados neste aplicativo são de responsabilidade da distribuidora de gás contratante, doravante denominada "Controladora", nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD).
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>2. Dados Coletados</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Coletamos os seguintes dados para prestação do serviço:{'\n'}
+              • Nome completo{'\n'}
+              • Endereço de e-mail{'\n'}
+              • Número de telefone{'\n'}
+              • Endereço de entrega{'\n'}
+              • Dados de localização GPS (apenas para entregadores durante a jornada de trabalho)
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>3. Finalidade do Tratamento</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Seus dados são utilizados exclusivamente para:{'\n'}
+              • Criação e gerenciamento da sua conta{'\n'}
+              • Processamento e entrega de pedidos{'\n'}
+              • Comunicação sobre o status dos pedidos via notificações{'\n'}
+              • Cumprimento de obrigações legais
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>4. Base Legal</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              O tratamento dos seus dados é realizado com base no seu consentimento (art. 7º, I da LGPD) e na execução do contrato de prestação de serviços (art. 7º, V da LGPD).
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>5. Compartilhamento de Dados</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Seus dados não são vendidos ou compartilhados com terceiros para fins comerciais. Podemos compartilhá-los apenas com prestadores de serviço essenciais ao funcionamento do aplicativo (ex: serviços de nuvem e envio de notificações), sob obrigação de confidencialidade.
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>6. Seus Direitos</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Você tem direito a:{'\n'}
+              • Confirmar a existência de tratamento de seus dados{'\n'}
+              • Acessar, corrigir ou excluir seus dados{'\n'}
+              • Revogar o consentimento a qualquer momento{'\n'}
+              • Solicitar a portabilidade dos dados{'\n\n'}
+              Para exercer seus direitos, entre em contato com a distribuidora responsável pelo aplicativo.
+            </Text>
+            <Text variant="labelLarge" style={styles.lgpdSection}>7. Retenção dos Dados</Text>
+            <Text variant="bodySmall" style={styles.lgpdText}>
+              Seus dados são mantidos pelo período necessário à prestação dos serviços e ao cumprimento de obrigações legais, sendo eliminados após esse período.
+            </Text>
+            <Button
+              mode="contained"
+              onPress={() => { setLgpdAccepted(true); setLgpdModalVisible(false); setErrors((p) => ({ ...p, lgpd: undefined })); }}
+              style={styles.lgpdAcceptBtn}
+            >
+              Entendi e Aceito
+            </Button>
+            <Button mode="text" onPress={() => setLgpdModalVisible(false)} style={styles.lgpdCloseBtn}>
+              Fechar
+            </Button>
+          </ScrollView>
+        </Modal>
+      </Portal>
     </SafeAreaView>
   );
 };
@@ -415,5 +499,48 @@ const styles = StyleSheet.create({
   cepLoader: {
     marginLeft: 8,
     marginBottom: 4,
+  },
+  lgpdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  lgpdTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  lgpdLink: {
+    color: theme.colors.primary,
+    textDecorationLine: 'underline',
+  },
+  lgpdModal: {
+    backgroundColor: '#fff',
+    margin: 16,
+    borderRadius: 12,
+    padding: 20,
+    maxHeight: '85%',
+  },
+  lgpdTitle: {
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  lgpdSection: {
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 6,
+    color: theme.colors.primary,
+  },
+  lgpdText: {
+    color: '#444',
+    lineHeight: 20,
+  },
+  lgpdAcceptBtn: {
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  lgpdCloseBtn: {
+    marginBottom: 8,
   },
 });

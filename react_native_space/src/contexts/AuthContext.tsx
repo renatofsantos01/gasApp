@@ -107,6 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (_) {}
     await apiService.removeToken();
     setUser(null);
   };
