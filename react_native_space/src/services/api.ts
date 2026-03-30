@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import {
@@ -190,8 +189,9 @@ class ApiService {
   }
 
   async getOrders(): Promise<Order[]> {
-    const response = await this.api.get<Order[]>('/orders');
-    return response.data;
+    const response = await this.api.get<{ data: Order[] } | Order[]>('/orders');
+    const payload = response.data;
+    return Array.isArray(payload) ? payload : payload.data;
   }
 
   async getOrder(id: string): Promise<Order> {
@@ -258,8 +258,9 @@ class ApiService {
 
   // Users endpoints (Admin only)
   async getClients(): Promise<Client[]> {
-    const response = await this.api.get<Client[]>('/users/clients');
-    return response.data;
+    const response = await this.api.get<{ data: Client[] } | Client[]>('/users/clients');
+    const payload = response.data;
+    return Array.isArray(payload) ? payload : payload.data;
   }
 
   async getClient(id: string): Promise<Client> {
