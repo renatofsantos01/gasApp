@@ -28,9 +28,6 @@ export default {
       buildNumber: BUILD_NUMBER,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        UIBackgroundModes: ['location'],
-        NSLocationAlwaysAndWhenInUseUsageDescription:
-          'Usamos sua localização para atribuir pedidos próximos durante sua jornada de entregas.',
         NSLocationWhenInUseUsageDescription:
           'Precisamos da sua localização para atribuir pedidos próximos a você.',
       },
@@ -47,7 +44,6 @@ export default {
       permissions: [
         'ACCESS_FINE_LOCATION',
         'ACCESS_COARSE_LOCATION',
-        'ACCESS_BACKGROUND_LOCATION',
       ],
     },
     web: {
@@ -60,9 +56,6 @@ export default {
         {
           locationWhenInUsePermission:
             'Precisamos da sua localização para atribuir pedidos próximos a você.',
-          locationAlwaysAndWhenInUsePermission:
-            'Usamos sua localização em segundo plano para atribuir pedidos durante sua jornada de entregas.',
-          isAndroidBackgroundLocationEnabled: true,
         },
       ],
       [
