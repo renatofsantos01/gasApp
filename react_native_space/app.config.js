@@ -7,6 +7,9 @@ const BUNDLE_ID = process.env.APP_BUNDLE_ID || 'br.com.techgas.demo';
 const VERSION = process.env.APP_VERSION || '1.0.0';
 const BUILD_NUMBER = process.env.APP_BUILD_NUMBER || '1';
 const VERSION_CODE = parseInt(process.env.APP_VERSION_CODE || '1', 10);
+const TENANT_SUBDOMAIN = process.env.EXPO_PUBLIC_TENANT_SUBDOMAIN || 'demo';
+const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL || 'https://gasapp-production-9773.up.railway.app';
+const PRIVACY_POLICY_URL = `${ADMIN_URL}/privacidade/${TENANT_SUBDOMAIN}`;
 
 export default {
   expo: {
@@ -71,6 +74,7 @@ export default {
       eas: {
         projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '',
       },
+      privacyPolicyUrl: PRIVACY_POLICY_URL,
     },
   },
 };
