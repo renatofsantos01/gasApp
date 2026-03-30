@@ -11,6 +11,10 @@
         "buildType": "apk"
       },
       "env": {
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_APP_NAME": "TechGás",
+        "EXPO_PUBLIC_APP_SLUG": "techgas-app",
+        "APP_BUNDLE_ID": "br.com.techgas.demo",
         "EXPO_PUBLIC_API_URL": "https://gasapp-production-9773.up.railway.app",
         "EXPO_PUBLIC_EAS_PROJECT_ID": "bf284fc2-a493-4ebf-acb0-de1ab1c203dc",
         "EXPO_PUBLIC_TENANT_SUBDOMAIN": "demo"
@@ -22,6 +26,9 @@
         "buildType": "apk"
       },
       "env": {
+        "EXPO_PUBLIC_APP_NAME": "TechGás",
+        "EXPO_PUBLIC_APP_SLUG": "techgas-app",
+        "APP_BUNDLE_ID": "br.com.techgas.demo",
         "EXPO_PUBLIC_API_URL": "https://gasapp-production-9773.up.railway.app",
         "EXPO_PUBLIC_EAS_PROJECT_ID": "bf284fc2-a493-4ebf-acb0-de1ab1c203dc",
         "EXPO_PUBLIC_TENANT_SUBDOMAIN": "demo"
@@ -32,10 +39,19 @@
         "buildType": "app-bundle"
       },
       "env": {
+        "EXPO_PUBLIC_APP_NAME": "TechGás",
+        "EXPO_PUBLIC_APP_SLUG": "techgas-app",
+        "APP_BUNDLE_ID": "br.com.techgas.demo",
         "EXPO_PUBLIC_API_URL": "https://gasapp-production-9773.up.railway.app",
         "EXPO_PUBLIC_EAS_PROJECT_ID": "bf284fc2-a493-4ebf-acb0-de1ab1c203dc",
         "EXPO_PUBLIC_TENANT_SUBDOMAIN": "demo"
       }
+    },
+    "client": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {}
     }
   },
   "submit": {
