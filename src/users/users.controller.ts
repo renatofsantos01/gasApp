@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
 import { UsersService } from './users.service';
@@ -53,8 +53,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all clients (Admin only)' })
   @ApiResponse({ status: 200, description: 'Clients retrieved successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  async findAllClients(@Request() req: any) {
-    return this.usersService.findAllClients(req.user.tenantId);
+  async findAllClients(
+    @Request() req: any,
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    return this.usersService.findAllClients(req.user.tenantId, parseInt(page, 10), parseInt(limit, 10));
   }
 
   @Get('clients/:id')

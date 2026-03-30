@@ -15,7 +15,7 @@ import { MailModule } from '../mail/mail.module';
     SmsModule,
     MailModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'distribuidora-gas-secret-key-2024',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '7d' },
     }),
   ],

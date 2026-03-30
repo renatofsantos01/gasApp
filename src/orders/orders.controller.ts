@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -34,8 +34,18 @@ export class OrdersController {
   @Get()
   @ApiOperation({ summary: 'Get orders (client: own orders, admin: all orders)' })
   @ApiResponse({ status: 200, description: 'Orders retrieved successfully' })
-  async findAll(@Request() req: any) {
-    return this.ordersService.findAll(req.user.userId, req.user.role, req.user.tenantId);
+  async findAll(
+    @Request() req: any,
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    return this.ordersService.findAll(
+      req.user.userId,
+      req.user.role,
+      req.user.tenantId,
+      parseInt(page, 10),
+      parseInt(limit, 10),
+    );
   }
 
   @Get(':id')

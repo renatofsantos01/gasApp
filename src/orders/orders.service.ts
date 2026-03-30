@@ -263,37 +263,47 @@ export class OrdersService {
     };
   }
 
-  async findAll(userId: string, userRole: string, tenantId: string) {
+  async findAll(userId: string, userRole: string, tenantId: string, page = 1, limit = 50) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const skip = (safePage - 1) * safeLimit;
+
     const where =
       userRole === 'admin' || userRole === 'superadmin'
         ? { tenantid: tenantId }
         : { userid: userId };
 
-    const orders = await this.prisma.order.findMany({
-      where,
-      include: {
-        user: {
-          select: { name: true, email: true, phone: true },
-        },
-        deliverer: {
-          select: { id: true, name: true },
-        },
-        address: {
-          select: {
-            street: true, number: true, complement: true,
-            neighborhood: true, city: true, state: true, zipcode: true,
+    const [total, orders] = await this.prisma.$transaction([
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        include: {
+          user: {
+            select: { name: true, email: true, phone: true },
+          },
+          deliverer: {
+            select: { id: true, name: true },
+          },
+          address: {
+            select: {
+              street: true, number: true, complement: true,
+              neighborhood: true, city: true, state: true, zipcode: true,
+            },
+          },
+          items: {
+            include: {
+              product: { select: { name: true, imageurl: true, price: true } },
+            },
           },
         },
-        items: {
-          include: {
-            product: { select: { name: true, imageurl: true, price: true } },
-          },
-        },
-      },
-      orderBy: { createdat: 'desc' },
-    });
+        orderBy: { createdat: 'desc' },
+      }),
+    ]);
 
-    return orders.map((order: any) => ({
+    return {
+      data: orders.map((order: any) => ({
       id: order.id,
       orderNumber: order.id.substring(0, 8).toUpperCase(),
       userId: order.userid,
@@ -319,7 +329,14 @@ export class OrdersService {
         price: item.unitprice,
         subtotal: item.subtotal,
       })),
-    }));
+    })),
+      pagination: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 
   async findOne(id: string, userId: string, userRole: string) {

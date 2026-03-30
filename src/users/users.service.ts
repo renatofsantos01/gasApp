@@ -6,9 +6,17 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAllClients(tenantId: string) {
-    const clients = await this.prisma.user.findMany({
+  async findAllClients(tenantId: string, page = 1, limit = 50) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+    const skip = (safePage - 1) * safeLimit;
+
+    const [total, clients] = await this.prisma.$transaction([
+      this.prisma.user.count({ where: { role: 'client', tenantid: tenantId } }),
+      this.prisma.user.findMany({
       where: { role: 'client', tenantid: tenantId },
+      skip,
+      take: safeLimit,
       select: {
         id: true,
         name: true,
@@ -33,17 +41,26 @@ export class UsersService {
         },
       },
       orderBy: { createdat: 'desc' },
-    });
+    }),
+    ]);
 
-    return clients.map((client: any) => ({
-      id: client.id,
-      name: client.name,
-      email: client.email,
-      phone: client.phone,
-      createdAt: client.createdat,
-      addresses: client.addresses,
-      _count: client._count,
-    }));
+    return {
+      data: clients.map((client: any) => ({
+        id: client.id,
+        name: client.name,
+        email: client.email,
+        phone: client.phone,
+        createdAt: client.createdat,
+        addresses: client.addresses,
+        _count: client._count,
+      })),
+      pagination: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 
   async findClientById(id: string, tenantId: string) {
