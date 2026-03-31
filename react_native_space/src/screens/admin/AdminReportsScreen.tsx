@@ -94,11 +94,30 @@ export const AdminReportsScreen: React.FC = () => {
         api.get('/reports/top-products', { params: { startDate: apiStartDate, endDate: apiEndDate, limit: 10 } }),
       ]);
 
-      // Combine the responses
+      const ordersData = ordersResponse?.data;
+      const revenueData = revenueResponse?.data;
+      const topProductsData = topProductsResponse?.data;
+
       setReportData({
-        orderStats: ordersResponse?.data ?? null,
-        revenueStats: revenueResponse?.data ?? null,
-        topProducts: topProductsResponse?.data ?? null,
+        orderStats: ordersData ? {
+          total: ordersData.totalOrders ?? 0,
+          byStatus: Object.entries(ordersData.ordersByStatus ?? {}).map(([status, count]) => ({
+            status,
+            count: count as number,
+          })),
+        } : undefined,
+        revenueStats: revenueData ? {
+          total: revenueData.totalRevenue ?? 0,
+          byPaymentMethod: Object.entries(revenueData.revenueByPaymentMethod ?? {}).map(([paymentMethod, total]) => ({
+            paymentMethod,
+            total: total as number,
+          })),
+        } : undefined,
+        topProducts: (topProductsData ?? []).map((p: any) => ({
+          productName: p.productName,
+          quantity: p.totalQuantity,
+          revenue: p.totalRevenue,
+        })),
       });
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);

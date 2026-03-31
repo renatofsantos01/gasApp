@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Text, Card, Button, TextInput, Chip, Divider, FAB, Portal, Modal } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../../services/api';
@@ -158,57 +158,62 @@ export const AdminCouponsScreen: React.FC = () => {
         <Modal
           visible={showModal}
           onDismiss={() => setShowModal(false)}
+          dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>Novo Cupom</Text>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View>
+              <Text variant="titleLarge" style={styles.modalTitle}>Novo Cupom</Text>
 
-          <TextInput
-            label="Código *"
-            value={form.code}
-            onChangeText={(v) => setForm({ ...form, code: v.toUpperCase() })}
-            autoCapitalize="characters"
-            style={styles.input}
-          />
-          <TextInput
-            label={form.discountType === 'percentage' ? 'Desconto (%) *' : 'Desconto (R$) *'}
-            value={form.discountValue}
-            onChangeText={(v) => setForm({ ...form, discountValue: v })}
-            keyboardType="decimal-pad"
-            style={styles.input}
-          />
-          <View style={styles.typeRow}>
-            <Text variant="bodyMedium" style={styles.label}>Tipo:</Text>
-            <Button
-              mode={form.discountType === 'percentage' ? 'contained' : 'outlined'}
-              onPress={() => setForm({ ...form, discountType: 'percentage' })}
-              compact
-              style={styles.typeBtn}
-            >
-              %
-            </Button>
-            <Button
-              mode={form.discountType === 'fixed' ? 'contained' : 'outlined'}
-              onPress={() => setForm({ ...form, discountType: 'fixed' })}
-              compact
-              style={styles.typeBtn}
-            >
-              R$
-            </Button>
-          </View>
-          <TextInput
-            label="Máx. usos (vazio = ilimitado)"
-            value={form.maxUses}
-            onChangeText={(v) => setForm({ ...form, maxUses: v })}
-            keyboardType="number-pad"
-            style={styles.input}
-          />
+              <TextInput
+                label="Código *"
+                value={form.code}
+                onChangeText={(v) => setForm({ ...form, code: v.toUpperCase() })}
+                autoCapitalize="characters"
+                style={styles.input}
+              />
+              <TextInput
+                label={form.discountType === 'percentage' ? 'Desconto (%) *' : 'Desconto (R$) *'}
+                value={form.discountValue}
+                onChangeText={(v) => setForm({ ...form, discountValue: v })}
+                keyboardType="decimal-pad"
+                style={styles.input}
+              />
+              <View style={styles.typeRow}>
+                <Text variant="bodyMedium" style={styles.label}>Tipo:</Text>
+                <Button
+                  mode={form.discountType === 'percentage' ? 'contained' : 'outlined'}
+                  onPress={() => setForm({ ...form, discountType: 'percentage' })}
+                  compact
+                  style={styles.typeBtn}
+                >
+                  %
+                </Button>
+                <Button
+                  mode={form.discountType === 'fixed' ? 'contained' : 'outlined'}
+                  onPress={() => setForm({ ...form, discountType: 'fixed' })}
+                  compact
+                  style={styles.typeBtn}
+                >
+                  R$
+                </Button>
+              </View>
+              <TextInput
+                label="Máx. usos (vazio = ilimitado)"
+                value={form.maxUses}
+                onChangeText={(v) => setForm({ ...form, maxUses: v })}
+                keyboardType="number-pad"
+                style={styles.input}
+              />
 
-          <View style={styles.modalActions}>
-            <Button onPress={() => setShowModal(false)}>Cancelar</Button>
-            <Button mode="contained" onPress={handleCreate} loading={saving} disabled={saving}>
-              Criar
-            </Button>
-          </View>
+              <View style={styles.modalActions}>
+                <Button onPress={() => setShowModal(false)}>Cancelar</Button>
+                <Button mode="contained" onPress={handleCreate} loading={saving} disabled={saving}>
+                  Criar
+                </Button>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </Portal>
 

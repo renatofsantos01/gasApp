@@ -72,8 +72,9 @@ export const AdminOrdersScreen: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/orders');
-      setOrders(response?.data ?? []);
-      setFilteredOrders(response?.data ?? []);
+      const list = response?.data?.data ?? [];
+      setOrders(list);
+      setFilteredOrders(list);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
     } finally {

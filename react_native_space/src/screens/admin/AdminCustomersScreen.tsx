@@ -66,8 +66,9 @@ export const AdminCustomersScreen: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/users/clients');
-      setCustomers(response?.data ?? []);
-      setFilteredCustomers(response?.data ?? []);
+      const list = response?.data?.data ?? [];
+      setCustomers(list);
+      setFilteredCustomers(list);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
     } finally {

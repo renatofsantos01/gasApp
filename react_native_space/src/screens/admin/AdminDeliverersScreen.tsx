@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { Text, Card, Button, TextInput, FAB, Portal, Modal } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../../services/api';
@@ -126,48 +126,53 @@ export const AdminDeliverersScreen: React.FC = () => {
         <Modal
           visible={showModal}
           onDismiss={() => setShowModal(false)}
+          dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>
-            {editingId ? 'Editar Entregador' : 'Novo Entregador'}
-          </Text>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View>
+              <Text variant="titleLarge" style={styles.modalTitle}>
+                {editingId ? 'Editar Entregador' : 'Novo Entregador'}
+              </Text>
 
-          <TextInput
-            label="Nome *"
-            value={form.name}
-            onChangeText={(v) => setForm({ ...form, name: v })}
-            style={styles.input}
-          />
-          <TextInput
-            label="E-mail *"
-            value={form.email}
-            onChangeText={(v) => setForm({ ...form, email: v })}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-            disabled={!!editingId}
-          />
-          <TextInput
-            label={editingId ? 'Nova senha (deixe em branco para manter)' : 'Senha *'}
-            value={form.password}
-            onChangeText={(v) => setForm({ ...form, password: v })}
-            secureTextEntry
-            style={styles.input}
-          />
-          <TextInput
-            label="Telefone"
-            value={form.phone}
-            onChangeText={(v) => setForm({ ...form, phone: v })}
-            keyboardType="phone-pad"
-            style={styles.input}
-          />
+              <TextInput
+                label="Nome *"
+                value={form.name}
+                onChangeText={(v) => setForm({ ...form, name: v })}
+                style={styles.input}
+              />
+              <TextInput
+                label="E-mail *"
+                value={form.email}
+                onChangeText={(v) => setForm({ ...form, email: v })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+                disabled={!!editingId}
+              />
+              <TextInput
+                label={editingId ? 'Nova senha (deixe em branco para manter)' : 'Senha *'}
+                value={form.password}
+                onChangeText={(v) => setForm({ ...form, password: v })}
+                secureTextEntry
+                style={styles.input}
+              />
+              <TextInput
+                label="Telefone"
+                value={form.phone}
+                onChangeText={(v) => setForm({ ...form, phone: v })}
+                keyboardType="phone-pad"
+                style={styles.input}
+              />
 
-          <View style={styles.actions}>
-            <Button onPress={() => setShowModal(false)}>Cancelar</Button>
-            <Button mode="contained" onPress={handleSave} loading={saving} disabled={saving}>
-              {editingId ? 'Salvar' : 'Criar'}
-            </Button>
-          </View>
+              <View style={styles.actions}>
+                <Button onPress={() => setShowModal(false)}>Cancelar</Button>
+                <Button mode="contained" onPress={handleSave} loading={saving} disabled={saving}>
+                  {editingId ? 'Salvar' : 'Criar'}
+                </Button>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </Portal>
 

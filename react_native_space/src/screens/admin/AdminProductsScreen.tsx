@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   Image,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import {
   Text,
@@ -403,9 +405,11 @@ export const AdminProductsScreen: React.FC = () => {
         <Modal
           visible={modalVisible}
           onDismiss={() => setModalVisible(false)}
+          dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <ScrollView>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView keyboardShouldPersistTaps="handled">
             <Text variant="titleLarge" style={styles.modalTitle}>
               {editingProduct ? 'Editar Produto' : 'Novo Produto'}
             </Text>
@@ -522,6 +526,7 @@ export const AdminProductsScreen: React.FC = () => {
               </Button>
             </View>
           </ScrollView>
+          </TouchableWithoutFeedback>
         </Modal>
       </Portal>
     </View>
