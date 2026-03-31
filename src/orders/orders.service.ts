@@ -568,6 +568,7 @@ export class OrdersService {
       address: order.address,
       items: order.items.map((item: any) => ({
         quantity: item.quantity,
+        price: item.unitprice,
         unitPrice: item.unitprice,
         subtotal: item.subtotal,
         product: {
