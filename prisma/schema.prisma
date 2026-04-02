@@ -122,6 +122,7 @@ model order {
   couponcode     String?
   discountamount Float?
   cpfcnpj        String?
+  changefor      Float?    // Troco: valor que o cliente vai pagar em dinheiro
   createdat      DateTime    @default(now())
   updatedat     DateTime    @updatedAt
   items         orderitem[]

@@ -121,6 +121,7 @@ export class OrdersService {
           couponcode: appliedCouponCode ?? null,
           discountamount: discountAmount > 0 ? discountAmount : null,
           cpfcnpj: dto.cpfCnpj ?? null,
+          changefor: dto.paymentMethod === 'Dinheiro' ? (dto.changeFor ?? null) : null,
           items: {
             create: orderItemsData,
           },
@@ -251,6 +252,7 @@ export class OrdersService {
       couponCode: order.couponcode,
       discountAmount: order.discountamount,
       cpfCnpj: order.cpfcnpj,
+      changeFor: order.changefor,
       createdAt: order.createdat,
       items: order.items.map((item: any) => ({
         id: item.id,
@@ -396,6 +398,7 @@ export class OrdersService {
       couponCode: order.couponcode,
       discountAmount: order.discountamount,
       cpfCnpj: order.cpfcnpj,
+      changeFor: order.changefor,
       createdAt: order.createdat,
       updatedAt: order.updatedat,
       items: order.items.map((item: any) => ({
@@ -563,6 +566,7 @@ export class OrdersService {
       totalAmount: order.totalamount,
       paymentMethod: order.paymentmethod,
       observations: order.observations,
+      changeFor: order.changefor,
       createdAt: order.createdat,
       user: order.user,
       address: order.address,
