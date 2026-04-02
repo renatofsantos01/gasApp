@@ -126,7 +126,7 @@ export class UsersService {
   async findAllDeliverers(tenantId: string) {
     return this.prisma.user.findMany({
       where: { role: 'entregador', tenantid: tenantId },
-      select: { id: true, name: true, email: true, phone: true },
+      select: { id: true, name: true, email: true, phone: true, available: true },
       orderBy: { name: 'asc' },
     });
   }
