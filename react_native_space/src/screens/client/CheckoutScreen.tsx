@@ -73,6 +73,7 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
   const [paymentMethod, setPaymentMethod] = useState('Dinheiro');
   const [observations, setObservations] = useState('');
   const [cpfCnpj, setCpfCnpj] = useState('');
+  const [changeFor, setChangeFor] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -147,6 +148,7 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
         observations: observations || undefined,
         couponCode: couponCode || undefined,
         cpfCnpj: cpfCnpj.replace(/\D/g, '') || undefined,
+        changeFor: paymentMethod === 'Dinheiro' && changeFor ? parseFloat(changeFor) : undefined,
         items: items.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
       });
       clearCart();
@@ -305,11 +307,32 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
                 <Text variant="bodyMedium" style={styles.paymentNote}>
                   O pagamento será realizado no momento da entrega.
                 </Text>
-                <RadioButton.Group onValueChange={setPaymentMethod} value={paymentMethod}>
+                <RadioButton.Group onValueChange={(v) => { setPaymentMethod(v); setChangeFor(''); }} value={paymentMethod}>
                   <RadioButton.Item label="💵 Dinheiro na entrega" value="Dinheiro" />
                   <RadioButton.Item label="📱 Pix na entrega" value="Pix" />
                   <RadioButton.Item label="💳 Cartão na entrega" value="Cartão" />
                 </RadioButton.Group>
+                {paymentMethod === 'Dinheiro' && (
+                  <View style={{ marginTop: 8 }}>
+                    <Text variant="labelMedium" style={styles.paymentNote}>
+                      Troco para quanto? (opcional)
+                    </Text>
+                    <TextInput
+                      mode="outlined"
+                      placeholder={`Ex: ${formatCurrency(Math.ceil(finalTotal / 10) * 10)}`}
+                      value={changeFor}
+                      onChangeText={setChangeFor}
+                      keyboardType="numeric"
+                      left={<TextInput.Affix text="R$" />}
+                      style={{ marginTop: 4 }}
+                    />
+                    {changeFor && parseFloat(changeFor) > 0 && parseFloat(changeFor) < finalTotal && (
+                      <Text style={{ color: '#F44336', fontSize: 12, marginTop: 4 }}>
+                        Valor deve ser maior que o total de {formatCurrency(finalTotal)}
+                      </Text>
+                    )}
+                  </View>
+                )}
               </Card.Content>
             </Card>
 
@@ -383,6 +406,11 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
                   PAGAMENTO
                 </Text>
                 <Text variant="bodyMedium">{paymentMethod} na entrega</Text>
+                {paymentMethod === 'Dinheiro' && changeFor && parseFloat(changeFor) >= finalTotal && (
+                  <Text variant="bodyMedium" style={{ color: '#4CAF50', marginTop: 2 }}>
+                    Troco para {formatCurrency(parseFloat(changeFor))} — levar {formatCurrency(parseFloat(changeFor) - finalTotal)} de troco
+                  </Text>
+                )}
 
                 <Divider style={styles.divider} />
                 <Text variant="labelMedium" style={styles.sectionLabel}>

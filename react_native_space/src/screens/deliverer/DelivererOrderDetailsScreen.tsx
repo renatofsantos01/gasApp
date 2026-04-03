@@ -158,6 +158,17 @@ export const DelivererOrderDetailsScreen: React.FC<Props> = ({ route, navigation
         <Text variant="bodyMedium" style={styles.secondary}>
           Pagamento: {order.paymentMethod}
         </Text>
+        {order.paymentMethod === 'Dinheiro' && order.changeFor != null && order.changeFor > 0 && (
+          <View style={styles.changeBox}>
+            <Text variant="titleMedium" style={styles.changeTitle}>💵 Troco</Text>
+            <Text variant="bodyMedium">
+              Cliente vai pagar: <Text style={{ fontWeight: 'bold' }}>{formatCurrency(order.changeFor)}</Text>
+            </Text>
+            <Text variant="bodyMedium">
+              Levar de troco: <Text style={styles.changeAmount}>{formatCurrency(order.changeFor - order.totalAmount)}</Text>
+            </Text>
+          </View>
+        )}
 
         {order.observations ? (
           <View style={styles.section}>
@@ -257,4 +268,15 @@ const styles = StyleSheet.create({
   },
   deliveredText: { color: '#2E7D32', fontWeight: 'bold' },
   backButton: { marginTop: 12 },
+  changeBox: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFA726',
+    gap: 4,
+  },
+  changeTitle: { fontWeight: 'bold', color: '#E65100', marginBottom: 4 },
+  changeAmount: { fontWeight: 'bold', color: '#2E7D32' },
 });

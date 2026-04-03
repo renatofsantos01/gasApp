@@ -114,6 +114,7 @@ export interface Order {
   couponCode?: string;
   discountAmount?: number;
   cpfCnpj?: string;
+  changeFor?: number;
   delivererId?: string;
   delivererName?: string;
   createdAt: string;
@@ -131,6 +132,7 @@ export interface CreateOrderRequest {
   observations?: string;
   couponCode?: string;
   cpfCnpj?: string;
+  changeFor?: number;
   items: Array<{
     productId: string;
     quantity: number;

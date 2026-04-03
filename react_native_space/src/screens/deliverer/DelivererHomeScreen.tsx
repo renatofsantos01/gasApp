@@ -5,12 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService, api } from '../../services/api';
 import { Order } from '../../types';
 import { formatCurrency } from '../../utils/format';
 import { EmptyState } from '../../components/EmptyState';
 import { theme } from '../../theme';
 import { DelivererStackParamList } from '../../navigation/DelivererNavigator';
+
+const SEEN_ORDERS_KEY = 'deliverer_seen_orders';
 
 type Nav = NativeStackNavigationProp<DelivererStackParamList, 'DelivererHome'>;
 
@@ -29,11 +32,31 @@ export const DelivererHomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [available, setAvailable] = useState(false);
   const [togglingAvailability, setTogglingAvailability] = useState(false);
+  const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
+
+  const loadSeenIds = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(SEEN_ORDERS_KEY);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      seenIdsRef.current = new Set(ids);
+    } catch (_) {}
+  };
+
+  const markAsSeen = async (orderId: string) => {
+    seenIdsRef.current.add(orderId);
+    setNewOrderIds((prev) => { const next = new Set(prev); next.delete(orderId); return next; });
+    try {
+      await AsyncStorage.setItem(SEEN_ORDERS_KEY, JSON.stringify([...seenIdsRef.current]));
+    } catch (_) {}
+  };
 
   const loadDeliveries = async () => {
     try {
       const data = await apiService.getMyDeliveries();
+      const unseen = data.filter((o) => !seenIdsRef.current.has(o.id)).map((o) => o.id);
+      setNewOrderIds(new Set(unseen));
       setOrders(data);
     } catch (e) {
       console.error('Erro ao carregar entregas:', e);
@@ -45,7 +68,9 @@ export const DelivererHomeScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      loadDeliveries();
+      loadSeenIds().then(loadDeliveries);
+      const interval = setInterval(loadDeliveries, 15000);
+      return () => clearInterval(interval);
     }, [])
   );
 
@@ -138,16 +163,25 @@ export const DelivererHomeScreen: React.FC = () => {
     );
   };
 
-  const renderOrder = ({ item }: { item: Order }) => (
+  const renderOrder = ({ item }: { item: Order }) => {
+    const isNew = newOrderIds.has(item.id);
+    return (
     <Card
-      style={styles.card}
-      onPress={() => navigation.navigate('DelivererOrderDetails', { order: item })}
+      style={[styles.card, isNew && styles.cardNew]}
+      onPress={() => { markAsSeen(item.id); navigation.navigate('DelivererOrderDetails', { order: item }); }}
     >
       <Card.Content>
         <View style={styles.header}>
-          <Text variant="titleMedium" style={styles.orderNum}>
-            Pedido #{item.id.substring(0, 8).toUpperCase()}
-          </Text>
+          <View style={styles.orderNumRow}>
+            <Text variant="titleMedium" style={styles.orderNum}>
+              Pedido #{item.id.substring(0, 8).toUpperCase()}
+            </Text>
+            {isNew && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>NOVO</Text>
+              </View>
+            )}
+          </View>
           <Chip
             style={{ backgroundColor: STATUS_COLORS[item.status] ?? '#999' }}
             textStyle={{ color: 'white', fontSize: 12 }}
@@ -174,19 +208,20 @@ export const DelivererHomeScreen: React.FC = () => {
       </Card.Content>
     </Card>
   );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.pageHeader}>
         <Text variant="headlineMedium" style={styles.title}>Minhas Entregas</Text>
         <Button
-          mode={available ? 'contained' : 'outlined'}
+          mode="contained"
           onPress={toggleAvailability}
           loading={togglingAvailability}
           disabled={togglingAvailability}
           icon={available ? 'stop-circle' : 'play-circle'}
-          style={[styles.journeyBtn, available ? styles.journeyBtnActive : styles.journeyBtnInactive]}
-          textColor={available ? '#fff' : theme.colors.primary}
+          style={[styles.journeyBtn, available ? styles.journeyBtnStop : styles.journeyBtnStart]}
+          textColor="#fff"
           compact
         >
           {available ? 'Encerrar Jornada' : 'Iniciar Jornada'}
@@ -237,8 +272,8 @@ const styles = StyleSheet.create({
   },
   title: { fontWeight: 'bold' },
   journeyBtn: { borderRadius: 20 },
-  journeyBtnActive: { backgroundColor: '#66BB6A' },
-  journeyBtnInactive: { borderColor: theme.colors.primary },
+  journeyBtnStart: { backgroundColor: '#66BB6A' },
+  journeyBtnStop: { backgroundColor: '#EF5350' },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,6 +291,18 @@ const styles = StyleSheet.create({
   statusText: { color: '#2E7D32', fontWeight: '600' },
   list: { padding: 16 },
   card: { marginBottom: 12 },
+  cardNew: {
+    borderWidth: 2,
+    borderColor: '#66BB6A',
+  },
+  orderNumRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  newBadge: {
+    backgroundColor: '#66BB6A',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  newBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
