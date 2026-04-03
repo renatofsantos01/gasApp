@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Building2, LogOut, LayoutDashboard, Tag, ShoppingBag, Package, Users, BarChart2 } from 'lucide-react';
+import { Building2, LogOut, LayoutDashboard, Tag, ShoppingBag, Package, Users } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,7 +34,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/products', label: 'Produtos', icon: Package },
     { href: '/dashboard/deliverers', label: 'Entregadores', icon: Users },
     { href: '/dashboard/coupons', label: 'Cupons', icon: Tag },
-    { href: '/dashboard/reports', label: 'Relatórios', icon: BarChart2 },
   ];
 
   const navItems = role === 'admin' ? adminNav : superadminNav;

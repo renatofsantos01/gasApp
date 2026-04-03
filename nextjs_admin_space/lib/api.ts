@@ -45,11 +45,11 @@ export const tenantsApi = {
 };
 
 export const ordersApi = {
-  findAll: () => api.get('/orders').then((r) => r.data),
+  findAll: () => api.get('/orders').then((r) => r.data?.data ?? r.data),
   updateStatus: (id: string, status: string) =>
     api.patch(`/orders/${id}/status`, { status }).then((r) => r.data),
   assignDeliverer: (orderId: string, delivererId: string) =>
-    api.post(`/orders/${orderId}/assign`, { delivererId }).then((r) => r.data),
+    api.patch(`/orders/${orderId}/assign`, { delivererId }).then((r) => r.data),
   cancel: (id: string, cancelReason: string) =>
     api.patch(`/orders/${id}/cancel`, { cancelReason }).then((r) => r.data),
 };

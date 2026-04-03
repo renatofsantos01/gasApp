@@ -1,9 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { productsApi } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { productsApi, api } from '@/lib/api';
 import { Product } from '@/lib/types';
-import { Package, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, ImagePlus, X } from 'lucide-react';
+
+const MAX_FILE_SIZE_MB = 2;
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ACCEPTED_LABEL = 'JPG, PNG ou WebP';
+
+async function uploadImageToR2(file: File): Promise<string> {
+  const { data } = await api.post('/upload/presigned', {
+    fileName: file.name,
+    contentType: file.type,
+  });
+  await fetch(data.uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  return data.publicUrl;
+}
 
 const EMPTY_FORM = { name: '', category: '', description: '', price: '', stock: '', imageUrl: '' };
 
@@ -14,6 +31,10 @@ export default function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -23,9 +44,17 @@ export default function ProductsPage() {
     finally { setLoading(false); }
   };
 
+  const resetImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const openCreate = () => {
     setEditing(null);
     setForm(EMPTY_FORM);
+    resetImage();
     setShowModal(true);
   };
 
@@ -39,21 +68,46 @@ export default function ProductsPage() {
       stock: String(p.stock),
       imageUrl: p.imageUrl ?? '',
     });
+    resetImage();
+    setImagePreview(p.imageUrl ?? null);
     setShowModal(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageError(null);
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setImageError(`Formato inválido. Use ${ACCEPTED_LABEL}.`);
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setImageError(`Imagem muito grande. Máximo ${MAX_FILE_SIZE_MB}MB.`);
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (imageError) return;
     setSaving(true);
-    const payload = {
-      name: form.name,
-      category: form.category,
-      description: form.description,
-      price: parseFloat(form.price),
-      stock: parseInt(form.stock),
-      imageUrl: form.imageUrl || undefined,
-    };
     try {
+      let imageUrl = form.imageUrl || undefined;
+      if (imageFile) {
+        imageUrl = await uploadImageToR2(imageFile);
+      }
+      const payload = {
+        name: form.name,
+        category: form.category,
+        description: form.description,
+        price: parseFloat(form.price),
+        stock: parseInt(form.stock),
+        imageUrl,
+      };
       if (editing) {
         await productsApi.update(editing.id, payload);
       } else {
@@ -175,9 +229,52 @@ export default function ProductsPage() {
                   <label className="block text-xs font-medium text-gray-600 mb-1">Estoque *</label>
                   <input required type="number" min="0" value={form.stock} onChange={f('stock')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">URL da Imagem</label>
-                  <input value={form.imageUrl} onChange={f('imageUrl')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Imagem do Produto</label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    {ACCEPTED_LABEL} · Máximo {MAX_FILE_SIZE_MB}MB · Recomendado: 800×800px (quadrada)
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPTED_TYPES.join(',')}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  {imagePreview ? (
+                    <div className="relative inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imagePreview}
+                        alt="preview"
+                        className="h-28 w-28 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { resetImage(); setForm((p) => ({ ...p, imageUrl: '' })); }}
+                        className="absolute -top-1.5 -right-1.5 bg-white border border-gray-300 rounded-full p-0.5 shadow-sm hover:bg-red-50 hover:border-red-300 transition"
+                      >
+                        <X size={12} className="text-gray-500" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-1.5 flex items-center gap-1 text-xs text-orange-600 hover:underline"
+                      >
+                        <ImagePlus size={12} /> Trocar imagem
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg py-6 text-gray-400 hover:border-orange-400 hover:text-orange-500 transition"
+                    >
+                      <ImagePlus size={22} className="mb-1" />
+                      <span className="text-xs">Clique para selecionar imagem</span>
+                    </button>
+                  )}
+                  {imageError && <p className="text-xs text-red-500 mt-1">{imageError}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Descrição *</label>
