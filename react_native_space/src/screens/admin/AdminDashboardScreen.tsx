@@ -38,7 +38,7 @@ export const AdminDashboardScreen: React.FC<any> = ({ navigation }) => {
   if (loading) return <Loading />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadDashboard(true)} colors={[theme.colors.primary]} />}>
         <View style={styles.header}>
           <Text variant="headlineMedium" style={styles.title}>Dashboard</Text>

@@ -177,12 +177,7 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
 
   if (addresses.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Finalizar Pedido
-          </Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={[]}>
         <View style={styles.emptyContainer}>
           <Text variant="titleLarge" style={styles.emptyTitle}>
             Nenhum endereço cadastrado
@@ -199,12 +194,7 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Finalizar Pedido
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container} edges={[]}>
 
       {/* Address bar - always visible */}
       <TouchableOpacity

@@ -44,7 +44,7 @@ export const MyOrdersScreen: React.FC<MyOrdersScreenProps> = ({ navigation }) =>
   if (loading) return <Loading message="Carregando pedidos..." />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>Meus Pedidos</Text>
       </View>

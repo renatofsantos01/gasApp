@@ -16,7 +16,7 @@ export const DelivererProfileScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.avatar}>

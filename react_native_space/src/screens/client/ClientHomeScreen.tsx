@@ -110,7 +110,7 @@ export const ClientHomeScreen: React.FC<ClientHomeScreenProps> = ({ navigation }
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.header}>
         <Text variant="headlineSmall" style={styles.greeting}>
           Olá, {user?.name?.split(' ')?.[0] ?? 'Cliente'}!

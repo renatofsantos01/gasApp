@@ -67,7 +67,7 @@ export const AddressesListScreen: React.FC<any> = ({ navigation }) => {
   if (loading) return <Loading />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <FlatList
         data={addresses}
         renderItem={({ item }) => (

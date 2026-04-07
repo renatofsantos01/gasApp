@@ -26,7 +26,7 @@ export const EditProfileScreen: React.FC<any> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.content}>
         <TextInput label="Nome" value={name} onChangeText={setName} mode="outlined" style={styles.input} />
         <TextInput

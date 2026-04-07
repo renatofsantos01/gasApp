@@ -130,12 +130,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
   if ((items?.length ?? 0) === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.title}>
-            Carrinho
-          </Text>
-        </View>
+      <SafeAreaView style={styles.container} edges={[]}>
         <EmptyState
           icon="cart-outline"
           title="Carrinho vazio"
@@ -155,13 +150,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Carrinho
-        </Text>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={[]}>
       {hasOutOfStock && (
         <Banner
           visible

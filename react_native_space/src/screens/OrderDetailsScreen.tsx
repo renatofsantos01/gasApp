@@ -146,7 +146,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({ navigati
   const createdAt = order?.createdAt ?? order?.createdat ?? '';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       {/* Tabs */}
       <View style={styles.tabBar}>
         <TouchableOpacity

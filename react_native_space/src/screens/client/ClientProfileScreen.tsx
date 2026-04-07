@@ -28,7 +28,7 @@ export const ClientProfileScreen: React.FC<ClientProfileScreenProps> = ({ naviga
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView>
         <View style={styles.header}>
           <Avatar.Text size={80} label={user?.name?.substring(0, 2)?.toUpperCase() ?? 'US'} />

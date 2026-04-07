@@ -86,7 +86,7 @@ export const DelivererOrderDetailsScreen: React.FC<Props> = ({ route, navigation
   const canMarkDelivered = order.status === 'Saiu para Entrega';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Text variant="headlineSmall" style={styles.title}>

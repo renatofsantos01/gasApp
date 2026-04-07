@@ -211,7 +211,7 @@ export const DelivererHomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.pageHeader}>
         <Text variant="headlineMedium" style={styles.title}>Minhas Entregas</Text>
         <Button
