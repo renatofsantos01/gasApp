@@ -33,9 +33,12 @@ const AdminTabs = () => (
   <Tab.Navigator
     screenOptions={{
       tabBarActiveTintColor: theme.colors.primary,
-      headerShown: true,
-      headerLeft: () => <HomeButton />,
-      headerTitle: '',
+      tabBarInactiveTintColor: '#64748B',
+      tabBarStyle: {
+        backgroundColor: theme.colors.surface,
+        borderTopColor: '#334155',
+      },
+      headerShown: false,
     }}
   >
     <Tab.Screen
@@ -111,9 +114,11 @@ export const AdminNavigator: React.FC = () => (
       headerShown: true,
       headerBackTitle: 'Voltar',
       headerLeft: () => <HomeButton />,
+      headerStyle: { backgroundColor: theme.colors.surface },
+      headerTintColor: theme.colors.onSurface,
     }}
   >
-    <Stack.Screen name="Tabs" component={AdminTabs} options={{ headerShown: false }} />
+    <Stack.Screen name="Tabs" component={AdminTabs} options={{ title: '', headerLeft: () => <HomeButton /> }} />
     <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ title: 'Detalhes do Pedido' }} />
   </Stack.Navigator>
 );

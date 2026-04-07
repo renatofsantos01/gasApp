@@ -33,9 +33,12 @@ const ClientTabs = () => (
   <Tab.Navigator
     screenOptions={{
       tabBarActiveTintColor: theme.colors.primary,
-      headerShown: true,
-      headerLeft: () => <HomeButton />,
-      headerTitle: '',
+      tabBarInactiveTintColor: '#64748B',
+      tabBarStyle: {
+        backgroundColor: theme.colors.surface,
+        borderTopColor: '#334155',
+      },
+      headerShown: false,
     }}
   >
     <Tab.Screen
@@ -71,9 +74,11 @@ export const ClientNavigator: React.FC = () => (
       headerShown: true,
       headerBackTitle: 'Voltar',
       headerLeft: () => <HomeButton />,
+      headerStyle: { backgroundColor: theme.colors.surface },
+      headerTintColor: theme.colors.onSurface,
     }}
   >
-    <Stack.Screen name="Tabs" component={ClientTabs} options={{ headerShown: false }} />
+    <Stack.Screen name="Tabs" component={ClientTabs} options={{ title: '', headerLeft: () => <HomeButton /> }} />
     <Stack.Screen name="Cart" component={CartScreen} options={{ title: 'Carrinho' }} />
     <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Finalizar Pedido' }} />
     <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} options={{ title: 'Detalhes do Pedido' }} />

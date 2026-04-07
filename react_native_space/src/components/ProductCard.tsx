@@ -23,13 +23,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <Card style={[styles.card, outOfStock && styles.cardDisabled]} onPress={outOfStock ? undefined : onPress}>
       <View style={styles.imageContainer}>
-        {product?.imageUrl ? (
-          <Image source={{ uri: product.imageUrl }} style={styles.image} resizeMode="cover" />
-        ) : (
-          <View style={[styles.image, styles.imageFallback]}>
-            <Text style={styles.imageFallbackText}>📦</Text>
-          </View>
-        )}
+        <View style={styles.imageWrapper}>
+          {product?.imageUrl ? (
+            <Image source={{ uri: product.imageUrl }} style={styles.image} resizeMode="cover" />
+          ) : (
+            <View style={[styles.image, styles.imageFallback]}>
+              <Text style={styles.imageFallbackText}>📦</Text>
+            </View>
+          )}
+        </View>
         {outOfStock && (
           <View style={styles.soldOutOverlay}>
             <Text style={styles.soldOutText}>ESGOTADO</Text>
@@ -52,10 +54,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Text>
         )}
       </Card.Content>
-      {onAddToCart && !outOfStock && (
+      {onAddToCart && (
         <Card.Actions>
-          <Button mode="contained" onPress={onAddToCart} style={styles.addButton}>
-            Adicionar
+          <Button mode="contained" onPress={onAddToCart} disabled={outOfStock} style={styles.addButton}>
+            {outOfStock ? 'Esgotado' : 'Adicionar'}
           </Button>
         </Card.Actions>
       )}
@@ -72,6 +74,13 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     height: 150,
+  },
+  imageWrapper: {
+    width: '100%',
+    height: '100%',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
   image: {

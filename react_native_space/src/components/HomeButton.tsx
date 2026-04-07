@@ -11,9 +11,11 @@ export const HomeButton: React.FC = () => {
 
   const handlePress = () => {
     if (user?.role === 'entregador') {
-      navigation.navigate('DelivererHome');
+      navigation.navigate('DelivererTabs', { screen: 'Entregas' });
+    } else if (user?.role === 'admin' || user?.role === 'superadmin') {
+      navigation.navigate('Tabs', { screen: 'Dashboard' });
     } else {
-      navigation.navigate('Tabs');
+      navigation.navigate('Tabs', { screen: 'ClientHome' });
     }
   };
 

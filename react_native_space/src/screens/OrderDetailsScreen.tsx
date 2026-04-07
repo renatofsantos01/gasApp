@@ -164,12 +164,12 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({ navigati
           <Text style={[styles.tabText, activeTab === 'activities' && styles.tabTextActive]}>
             Atividades
           </Text>
-          {hasNewActivity && (
+          {activeTab !== 'activities' && hasNewActivity && (
             <View style={styles.badgeNew}>
               <Text style={styles.badgeText}>● novo</Text>
             </View>
           )}
-          {!hasNewActivity && activities.length > 0 && (
+          {activeTab !== 'activities' && !hasNewActivity && activities.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{activities.length}</Text>
             </View>
