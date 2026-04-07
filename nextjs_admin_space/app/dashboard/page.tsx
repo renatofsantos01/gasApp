@@ -267,7 +267,7 @@ function AdminDashboard() {
                 <BarChart data={delivererChart} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => [`${v} entrega${v !== 1 ? 's' : ''}`, '']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Tooltip formatter={(v) => { const n = Number(v ?? 0); return [`${n} entrega${n !== 1 ? 's' : ''}`, '']; }} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {delivererChart.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
