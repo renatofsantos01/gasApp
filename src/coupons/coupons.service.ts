@@ -69,6 +69,7 @@ export class CouponsService {
     code: string,
     tenantId: string,
     orderTotal: number,
+    userId?: string,
   ): Promise<{
     valid: boolean;
     discountAmount: number;
@@ -89,6 +90,14 @@ export class CouponsService {
       return { valid: false, discountAmount: 0, message: 'Cupom expirado' };
     if (coupon.maxuses !== null && coupon.usedcount >= coupon.maxuses)
       return { valid: false, discountAmount: 0, message: 'Cupom esgotado' };
+
+    if (userId) {
+      const alreadyUsed = await this.prisma.coupon_usage.findUnique({
+        where: { couponid_userid: { couponid: coupon.id, userid: userId } },
+      });
+      if (alreadyUsed)
+        return { valid: false, discountAmount: 0, message: 'Você já utilizou este cupom' };
+    }
 
     const discountAmount =
       coupon.discounttype === 'percentage'

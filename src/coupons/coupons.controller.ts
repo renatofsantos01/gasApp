@@ -67,6 +67,7 @@ export class CouponsController {
       code,
       req.user.tenantId,
       parseFloat(total) || 0,
+      req.user.sub,
     );
   }
 }

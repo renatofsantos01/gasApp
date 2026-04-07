@@ -61,8 +61,10 @@ model user {
   locationupdatedat DateTime? // Quando a localização foi atualizada pela última vez
   createdat DateTime  @default(now())
   addresses       address[]
-  orders          order[]   @relation("UserOrders")
-  deliveredorders order[]   @relation("DelivererOrders")
+  orders          order[]        @relation("UserOrders")
+  deliveredorders order[]        @relation("DelivererOrders")
+  couponusages    coupon_usage[]
+  orderactivities order_activity[]
 
   @@unique([email, tenantid]) // Email pode repetir entre tenants, mas não dentro do mesmo tenant
   @@index([tenantid])
@@ -124,8 +126,9 @@ model order {
   cpfcnpj        String?
   changefor      Float?    // Troco: valor que o cliente vai pagar em dinheiro
   createdat      DateTime    @default(now())
-  updatedat     DateTime    @updatedAt
+  updatedat     DateTime       @updatedAt
   items         orderitem[]
+  activities    order_activity[]
   
   @@index([tenantid])
   @@index([userid])
@@ -147,18 +150,45 @@ model orderitem {
 }
 
 model coupon {
-  id             String    @id @default(uuid())
+  id             String         @id @default(uuid())
   tenantid       String
-  tenant         tenant    @relation(fields: [tenantid], references: [id], onDelete: Cascade)
+  tenant         tenant         @relation(fields: [tenantid], references: [id], onDelete: Cascade)
   code           String
-  discounttype   String    // 'percentage' | 'fixed'
+  discounttype   String         // 'percentage' | 'fixed'
   discountvalue  Float
   maxuses        Int?
-  usedcount      Int       @default(0)
-  isactive       Boolean   @default(true)
+  usedcount      Int            @default(0)
+  isactive       Boolean        @default(true)
   expiresat      DateTime?
-  createdat      DateTime  @default(now())
+  createdat      DateTime       @default(now())
+  usages         coupon_usage[]
 
   @@unique([code, tenantid])
   @@index([tenantid])
+}
+
+model order_activity {
+  id        String   @id @default(uuid())
+  orderid   String
+  order     order    @relation(fields: [orderid], references: [id], onDelete: Cascade)
+  userid    String?
+  user      user?    @relation(fields: [userid], references: [id], onDelete: SetNull)
+  type      String   // 'system' | 'message'
+  content   String
+  createdat DateTime @default(now())
+
+  @@index([orderid])
+}
+
+model coupon_usage {
+  id        String   @id @default(uuid())
+  couponid  String
+  coupon    coupon   @relation(fields: [couponid], references: [id], onDelete: Cascade)
+  userid    String
+  user      user     @relation(fields: [userid], references: [id], onDelete: Cascade)
+  createdat DateTime @default(now())
+
+  @@unique([couponid, userid])
+  @@index([couponid])
+  @@index([userid])
 }

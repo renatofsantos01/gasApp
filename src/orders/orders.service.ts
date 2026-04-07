@@ -29,6 +29,12 @@ export class OrdersService {
     private notificationsService: NotificationsService,
   ) {}
 
+  private async logActivity(orderid: string, content: string, userid?: string) {
+    await this.prisma.order_activity.create({
+      data: { orderid, content, type: userid ? 'message' : 'system', userid: userid ?? null },
+    });
+  }
+
   async create(userId: string, dto: CreateOrderDto) {
     // Get user's tenant
     const user = await this.prisma.user.findUnique({
@@ -96,6 +102,7 @@ export class OrdersService {
         dto.couponCode,
         user.tenantid,
         totalAmount,
+        userId,
       );
       if (!validation.valid) {
         throw new BadRequestException(validation.message ?? 'Cupom inválido');
@@ -145,11 +152,18 @@ export class OrdersService {
       ),
     ]);
 
-    // Increment coupon usage count
+    // Registrar atividade de criação
+    const creator = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    await this.logActivity(order.id, `Pedido criado por ${creator?.name ?? 'Cliente'}`);
+
+    // Increment coupon usage count and register per-user usage
     if (appliedCoupon) {
       await this.prisma.coupon.update({
         where: { id: appliedCoupon.id },
         data: { usedcount: { increment: 1 } },
+      });
+      await this.prisma.coupon_usage.create({
+        data: { couponid: appliedCoupon.id, userid: userId },
       });
     }
 
@@ -212,6 +226,8 @@ export class OrdersService {
           where: { id: order.id },
           data: { delivererid: nearestDeliverer.id },
         });
+
+        await this.logActivity(order.id, `Pedido atribuído ao entregador ${nearestDeliverer.name}`);
 
         if (nearestDeliverer.pushtoken) {
           await this.notificationsService.sendPushNotification(
@@ -435,6 +451,8 @@ export class OrdersService {
       },
     });
 
+    await this.logActivity(id, `Status atualizado para: ${dto.status}`);
+
     // Notificar cliente sobre mudança de status
     try {
       const client = await this.prisma.user.findUnique({
@@ -481,6 +499,24 @@ export class OrdersService {
       },
     });
 
+    // Reverter uso do cupom se havia um aplicado
+    if (order.couponcode) {
+      const coupon = await this.prisma.coupon.findUnique({
+        where: { code_tenantid: { code: order.couponcode, tenantid: order.tenantid } },
+      });
+      if (coupon) {
+        await this.prisma.coupon.update({
+          where: { id: coupon.id },
+          data: { usedcount: { decrement: 1 } },
+        });
+        await this.prisma.coupon_usage.deleteMany({
+          where: { couponid: coupon.id, userid: order.userid },
+        });
+      }
+    }
+
+    await this.logActivity(id, `Pedido cancelado${dto.cancelReason ? `: ${dto.cancelReason}` : ''}`);
+
     // Notificar cliente sobre cancelamento
     try {
       const client = await this.prisma.user.findUnique({
@@ -520,6 +556,8 @@ export class OrdersService {
       data: { delivererid: dto.delivererId },
       select: { id: true, delivererid: true, status: true },
     });
+
+    await this.logActivity(orderId, `Pedido atribuído ao entregador ${deliverer.name}`);
 
     // Notificar entregador sobre nova entrega atribuída
     try {
@@ -611,6 +649,43 @@ export class OrdersService {
       }
     } catch (_) {}
 
+    await this.logActivity(orderId, `Status atualizado para: ${dto.status}`);
+
     return { id: updated.id, status: updated.status, updatedAt: updated.updatedat };
+  }
+
+  async getActivities(orderId: string, requesterId: string, requesterRole: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (requesterRole === 'client' && order.userid !== requesterId)
+      throw new ForbiddenException('Not your order');
+
+    const activities = await this.prisma.order_activity.findMany({
+      where: { orderid: orderId },
+      include: { user: { select: { name: true, role: true } } },
+      orderBy: { createdat: 'asc' },
+    });
+
+    return activities.map((a) => ({
+      id: a.id,
+      type: a.type,
+      content: a.content,
+      createdAt: a.createdat,
+      user: a.user ? { name: a.user.name, role: a.user.role } : null,
+    }));
+  }
+
+  async addActivity(orderId: string, content: string, userId: string, userRole: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (userRole === 'client' && order.userid !== userId)
+      throw new ForbiddenException('Not your order');
+    if (userRole === 'entregador' && order.delivererid !== userId)
+      throw new ForbiddenException('Not your delivery');
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    await this.logActivity(orderId, content, userId);
+
+    return { ok: true };
   }
 }

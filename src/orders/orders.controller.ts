@@ -6,6 +6,7 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
 import { AssignDelivererDto } from './dto/assign-deliverer.dto';
 import { DeliveryStatusDto } from './dto/delivery-status.dto';
+import { CreateActivityDto } from './dto/create-activity.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
@@ -89,5 +90,17 @@ export class OrdersController {
   async updateDeliveryStatus(@Param('id') id: string, @Body() dto: DeliveryStatusDto, @Request() req: any) {
     if (req.user.role !== 'entregador') throw new ForbiddenException('Entregadores apenas');
     return this.ordersService.updateDeliveryStatus(id, dto, req.user.userId);
+  }
+
+  @Get(':id/activities')
+  @ApiOperation({ summary: 'Get order activity feed' })
+  async getActivities(@Param('id') id: string, @Request() req: any) {
+    return this.ordersService.getActivities(id, req.user.userId, req.user.role);
+  }
+
+  @Post(':id/activities')
+  @ApiOperation({ summary: 'Add observation to order activity feed' })
+  async addActivity(@Param('id') id: string, @Body() dto: CreateActivityDto, @Request() req: any) {
+    return this.ordersService.addActivity(id, dto.content, req.user.userId, req.user.role);
   }
 }
