@@ -420,14 +420,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             <Text variant="bodySmall" style={styles.lgpdText}>
               Seus dados são mantidos pelo período necessário à prestação dos serviços e ao cumprimento de obrigações legais, sendo eliminados após esse período.
             </Text>
-            <Button
-              mode="contained"
-              onPress={() => { setLgpdAccepted(true); setLgpdModalVisible(false); setErrors((p) => ({ ...p, lgpd: undefined })); }}
-              style={styles.lgpdAcceptBtn}
-            >
-              Entendi e Aceito
-            </Button>
-            <Button mode="text" onPress={() => setLgpdModalVisible(false)} style={styles.lgpdCloseBtn}>
+            <Button mode="contained" onPress={() => setLgpdModalVisible(false)} style={styles.lgpdAcceptBtn}>
               Fechar
             </Button>
           </ScrollView>

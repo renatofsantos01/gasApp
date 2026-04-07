@@ -13,6 +13,7 @@ import {
   CreateOrderRequest,
   UpdateOrderStatusRequest,
   CancelOrderRequest,
+  OrderActivity,
   Address,
   AddressInput,
   DashboardStats,
@@ -207,6 +208,15 @@ class ApiService {
   async cancelOrder(id: string, data: CancelOrderRequest): Promise<Order> {
     const response = await this.api.patch<Order>(`/orders/${id}/cancel`, data);
     return response.data;
+  }
+
+  async getOrderActivities(orderId: string): Promise<OrderActivity[]> {
+    const response = await this.api.get<OrderActivity[]>(`/orders/${orderId}/activities`);
+    return response.data;
+  }
+
+  async addOrderActivity(orderId: string, content: string): Promise<void> {
+    await this.api.post(`/orders/${orderId}/activities`, { content });
   }
 
   // Addresses endpoints

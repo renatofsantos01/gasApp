@@ -147,6 +147,14 @@ export interface CancelOrderRequest {
   cancelReason: string;
 }
 
+export interface OrderActivity {
+  id: string;
+  type: 'system' | 'message';
+  content: string;
+  createdAt: string;
+  user: { name: string; role: string } | null;
+}
+
 // Cart types
 export interface CartItem {
   product: Product;

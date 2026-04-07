@@ -16,7 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onAddToCart,
   onPress,
-  showStock = true,
+  showStock = false,
 }) => {
   const outOfStock = (product?.stock ?? 0) <= 0;
 

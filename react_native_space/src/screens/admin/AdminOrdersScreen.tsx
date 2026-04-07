@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -5,6 +7,7 @@ import {
   FlatList,
   RefreshControl,
   ScrollView,
+  Alert,
 } from 'react-native';
 import {
   Text,
@@ -12,9 +15,7 @@ import {
   Chip,
   Searchbar,
   Button,
-  Portal,
-  Modal,
-  RadioButton,
+  Menu,
 } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api, apiService } from '../../services/api';
@@ -57,16 +58,10 @@ export const AdminOrdersScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Todos');
-
-  // Status modal
-  const [statusModalVisible, setStatusModalVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  // Assign deliverer modal
-  const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [deliverers, setDeliverers] = useState<Deliverer[]>([]);
-  const [selectedDelivererId, setSelectedDelivererId] = useState('');
-  const [assignLoading, setAssignLoading] = useState(false);
+
+  const [openStatusMenuId, setOpenStatusMenuId] = useState<string | null>(null);
+  const [openDelivererMenuId, setOpenDelivererMenuId] = useState<string | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -86,6 +81,7 @@ export const AdminOrdersScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       loadOrders();
+      apiService.getDeliverers().then(setDeliverers).catch(() => setDeliverers([]));
     }, [])
   );
 
@@ -116,49 +112,44 @@ export const AdminOrdersScreen: React.FC = () => {
   }, [searchQuery, selectedStatus, orders]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    setOpenStatusMenuId(null);
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
       loadOrders();
-      setStatusModalVisible(false);
-      setSelectedOrder(null);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    try {
-      await api.patch(`/orders/${orderId}/cancel`, { cancelReason: 'Cancelado pelo administrador' });
-      loadOrders();
-    } catch (error) {
-      console.error('Erro ao cancelar pedido:', error);
-    }
+  const handleCancelOrder = (orderId: string) => {
+    Alert.alert(
+      'Cancelar Pedido',
+      'Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.',
+      [
+        { text: 'Voltar', style: 'cancel' },
+        {
+          text: 'Cancelar Pedido',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.patch(`/orders/${orderId}/cancel`, { cancelReason: 'Cancelado pelo administrador' });
+              loadOrders();
+            } catch (error) {
+              console.error('Erro ao cancelar pedido:', error);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const openAssignModal = async (order: Order) => {
-    setSelectedOrder(order);
-    setSelectedDelivererId(order.delivererId ?? '');
+  const handleAssignDeliverer = async (orderId: string, delivererId: string) => {
+    setOpenDelivererMenuId(null);
     try {
-      const list = await apiService.getDeliverers();
-      setDeliverers(list);
-    } catch {
-      setDeliverers([]);
-    }
-    setAssignModalVisible(true);
-  };
-
-  const handleAssignDeliverer = async () => {
-    if (!selectedOrder || !selectedDelivererId) return;
-    try {
-      setAssignLoading(true);
-      await apiService.assignDeliverer(selectedOrder.id, selectedDelivererId);
+      await apiService.assignDeliverer(orderId, delivererId);
       loadOrders();
-      setAssignModalVisible(false);
-      setSelectedOrder(null);
     } catch (e) {
       console.error('Erro ao atribuir entregador:', e);
-    } finally {
-      setAssignLoading(false);
     }
   };
 
@@ -214,31 +205,73 @@ export const AdminOrdersScreen: React.FC = () => {
 
         {item?.status !== 'Entregue' && item?.status !== 'Cancelado' && (
           <View style={styles.actions}>
-            <Button
-              mode="outlined"
-              onPress={() => { setSelectedOrder(item); setStatusModalVisible(true); }}
-              style={styles.actionButton}
-              compact
-            >
-              Status
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={() => openAssignModal(item)}
-              style={styles.actionButton}
-              compact
-            >
-              Entregador
-            </Button>
-            <Button
-              mode="outlined"
-              textColor="#EF5350"
-              onPress={() => handleCancelOrder(item?.id ?? '')}
-              style={styles.actionButton}
-              compact
-            >
-              Cancelar
-            </Button>
+            <View style={styles.actionItem}>
+              <Menu
+                visible={openStatusMenuId === item.id}
+                onDismiss={() => setOpenStatusMenuId(null)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setOpenStatusMenuId(item.id)}
+                    style={styles.actionButton}
+                  >
+                    Status
+                  </Button>
+                }
+              >
+                {['Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue'].map((status) => (
+                  <Menu.Item
+                    key={status}
+                    title={status}
+                    onPress={() => handleUpdateStatus(item.id, status)}
+                    trailingIcon={item.status === status ? 'check' : undefined}
+                  />
+                ))}
+              </Menu>
+            </View>
+
+            <View style={styles.actionItem}>
+              <Menu
+                visible={openDelivererMenuId === item.id}
+                onDismiss={() => setOpenDelivererMenuId(null)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setOpenDelivererMenuId(item.id)}
+                    style={styles.actionButton}
+                  >
+                    Entregador
+                  </Button>
+                }
+              >
+                {deliverers.length === 0 ? (
+                  <Menu.Item title="Nenhum entregador cadastrado" disabled />
+                ) : (
+                  deliverers.map((d) => (
+                    <Menu.Item
+                      key={d.id}
+                      title={d.name}
+                      onPress={() => handleAssignDeliverer(item.id, d.id)}
+                      trailingIcon={item.delivererId === d.id ? 'check' : undefined}
+                    />
+                  ))
+                )}
+              </Menu>
+            </View>
+
+            <View style={styles.actionItem}>
+              <Button
+                mode="outlined"
+                textColor="#EF5350"
+                onPress={() => handleCancelOrder(item?.id ?? '')}
+                style={styles.actionButton}
+                compact
+              >
+                Cancelar
+              </Button>
+            </View>
           </View>
         )}
       </Card.Content>
@@ -287,79 +320,6 @@ export const AdminOrdersScreen: React.FC = () => {
           </View>
         }
       />
-
-      {/* Modal de status */}
-      <Portal>
-        <Modal
-          visible={statusModalVisible}
-          onDismiss={() => { setStatusModalVisible(false); setSelectedOrder(null); }}
-          contentContainerStyle={styles.modal}
-        >
-          <Text variant="titleLarge" style={styles.modalTitle}>Atualizar Status</Text>
-          <Text variant="bodyMedium" style={styles.modalSubtitle}>
-            Pedido #{selectedOrder?.id?.substring(0, 8) ?? ''}
-          </Text>
-          {['Pendente', 'Em Preparo', 'Saiu para Entrega', 'Entregue'].map((status) => (
-            <Button
-              key={status}
-              mode="outlined"
-              onPress={() => handleUpdateStatus(selectedOrder?.id ?? '', status)}
-              style={styles.statusButton}
-            >
-              {status}
-            </Button>
-          ))}
-          <Button mode="text" onPress={() => { setStatusModalVisible(false); setSelectedOrder(null); }}>
-            Cancelar
-          </Button>
-        </Modal>
-      </Portal>
-
-      {/* Modal de atribuição de entregador */}
-      <Portal>
-        <Modal
-          visible={assignModalVisible}
-          onDismiss={() => { setAssignModalVisible(false); setSelectedOrder(null); }}
-          contentContainerStyle={styles.modal}
-        >
-          <Text variant="titleLarge" style={styles.modalTitle}>Atribuir Entregador</Text>
-          <Text variant="bodyMedium" style={styles.modalSubtitle}>
-            Pedido #{selectedOrder?.id?.substring(0, 8) ?? ''}
-          </Text>
-
-          {deliverers.length === 0 ? (
-            <Text variant="bodyMedium" style={styles.noDeliverers}>
-              Nenhum entregador cadastrado.{'\n'}Crie um usuário com role "entregador".
-            </Text>
-          ) : (
-            <RadioButton.Group
-              onValueChange={setSelectedDelivererId}
-              value={selectedDelivererId}
-            >
-              {deliverers.map((d) => (
-                <RadioButton.Item
-                  key={d.id}
-                  label={d.name}
-                  value={d.id}
-                />
-              ))}
-            </RadioButton.Group>
-          )}
-
-          <Button
-            mode="contained"
-            onPress={handleAssignDeliverer}
-            disabled={!selectedDelivererId || assignLoading}
-            loading={assignLoading}
-            style={styles.assignButton}
-          >
-            Atribuir
-          </Button>
-          <Button mode="text" onPress={() => { setAssignModalVisible(false); setSelectedOrder(null); }}>
-            Cancelar
-          </Button>
-        </Modal>
-      </Portal>
     </View>
   );
 };
@@ -395,18 +355,7 @@ const styles = StyleSheet.create({
   totalAmount: { color: theme.colors.primary, fontWeight: 'bold' },
   paymentMethod: { color: '#666' },
   actions: { flexDirection: 'row', marginTop: 12, gap: 8 },
-  actionButton: { flex: 1 },
+  actionItem: { flex: 1 },
+  actionButton: { width: '100%' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', padding: 32 },
-  modal: {
-    backgroundColor: 'white',
-    padding: 20,
-    margin: 20,
-    borderRadius: 8,
-    maxHeight: '80%',
-  },
-  modalTitle: { marginBottom: 8, fontWeight: 'bold' },
-  modalSubtitle: { marginBottom: 16, color: '#666' },
-  statusButton: { marginBottom: 8 },
-  noDeliverers: { color: '#666', textAlign: 'center', marginVertical: 16 },
-  assignButton: { marginTop: 16, marginBottom: 8 },
 });
