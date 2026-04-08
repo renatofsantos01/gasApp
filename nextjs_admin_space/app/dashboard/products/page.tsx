@@ -220,19 +220,19 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
-                  <input required value={form.name} onChange={f('name')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  <input required value={form.name} onChange={f('name')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
-                  <input required value={form.category} onChange={f('category')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  <input required value={form.category} onChange={f('category')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Preço (R$) *</label>
-                  <input required type="number" min="0" step="0.01" value={form.price} onChange={f('price')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  <input required type="number" min="0" step="0.01" value={form.price} onChange={f('price')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Estoque *</label>
-                  <input required type="number" min="0" value={form.stock} onChange={f('stock')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  <input required type="number" min="0" value={form.stock} onChange={f('stock')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Imagem do Produto</label>
@@ -283,7 +283,7 @@ export default function ProductsPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Descrição *</label>
-                  <textarea required value={form.description} onChange={f('description')} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none" />
+                  <textarea required value={form.description} onChange={f('description')} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 resize-none" />
                 </div>
               </div>
               <div className="flex gap-3 pt-1 pb-2">
