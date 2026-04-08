@@ -207,17 +207,22 @@ export default function ProductsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
-            <h3 className="font-semibold text-gray-900 mb-4">
-              {editing ? 'Editar Produto' : 'Novo Produto'}
-            </h3>
-            <form onSubmit={handleSave} className="space-y-3">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900">
+                {editing ? 'Editar Produto' : 'Novo Produto'}
+              </h3>
+              <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 transition">
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSave} className="overflow-y-auto px-6 py-4 space-y-3 flex-1">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
                   <input required value={form.name} onChange={f('name')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
                   <input required value={form.category} onChange={f('category')} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
                 </div>
@@ -281,7 +286,7 @@ export default function ProductsPage() {
                   <textarea required value={form.description} onChange={f('description')} rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none" />
                 </div>
               </div>
-              <div className="flex gap-3 pt-1">
+              <div className="flex gap-3 pt-1 pb-2">
                 <button type="submit" disabled={saving}
                   className="flex-1 bg-orange-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50">
                   {saving ? 'Salvando...' : 'Salvar'}
