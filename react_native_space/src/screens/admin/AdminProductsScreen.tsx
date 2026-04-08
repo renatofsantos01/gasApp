@@ -601,7 +601,9 @@ const styles = StyleSheet.create({
   },
   modal: {
     backgroundColor: theme.colors.surface,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 0,
     margin: 20,
     borderRadius: 8,
     maxHeight: '90%',
@@ -617,8 +619,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: 16,
-    marginBottom: 0,
-    paddingBottom: 0,
+    paddingBottom: 20,
   },
   modalButton: {
     marginLeft: 8,
