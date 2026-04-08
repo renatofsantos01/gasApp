@@ -318,7 +318,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({ navigati
               mode="outlined"
               placeholder="Adicionar observação..."
               style={styles.messageInput}
-              textColor="#111"
+
               dense
               multiline
             />
