@@ -8,8 +8,6 @@ import {
   Platform,
   Alert,
   Image,
-  TouchableWithoutFeedback,
-  Keyboard,
 } from 'react-native';
 import {
   Text,
@@ -408,8 +406,7 @@ export const AdminProductsScreen: React.FC = () => {
           dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
             <Text variant="titleLarge" style={styles.modalTitle}>
               {editingProduct ? 'Editar Produto' : 'Novo Produto'}
             </Text>
@@ -420,6 +417,7 @@ export const AdminProductsScreen: React.FC = () => {
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               style={styles.input}
               mode="outlined"
+              textColor="#111"
             />
 
             <Menu
@@ -432,6 +430,7 @@ export const AdminProductsScreen: React.FC = () => {
                   style={styles.input}
                   mode="outlined"
                   editable={false}
+                  textColor="#111"
                   right={<TextInput.Icon icon="chevron-down" onPress={() => setCategoryMenuVisible(true)} />}
                   onPressIn={() => setCategoryMenuVisible(true)}
                 />
@@ -457,6 +456,7 @@ export const AdminProductsScreen: React.FC = () => {
               mode="outlined"
               multiline
               numberOfLines={3}
+              textColor="#111"
             />
 
             <TextInput
@@ -466,6 +466,7 @@ export const AdminProductsScreen: React.FC = () => {
               style={styles.input}
               mode="outlined"
               keyboardType="decimal-pad"
+              textColor="#111"
             />
 
             <View style={styles.imageSection}>
@@ -507,6 +508,7 @@ export const AdminProductsScreen: React.FC = () => {
               style={styles.input}
               mode="outlined"
               keyboardType="number-pad"
+              textColor="#111"
             />
 
             <View style={styles.modalActions}>
@@ -526,7 +528,6 @@ export const AdminProductsScreen: React.FC = () => {
               </Button>
             </View>
           </ScrollView>
-          </TouchableWithoutFeedback>
         </Modal>
       </Portal>
     </View>
