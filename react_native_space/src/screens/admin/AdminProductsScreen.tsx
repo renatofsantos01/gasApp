@@ -406,7 +406,7 @@ export const AdminProductsScreen: React.FC = () => {
           dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 20 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 20, flexGrow: 0 }}>
             <Text variant="titleLarge" style={styles.modalTitle}>
               {editingProduct ? 'Editar Produto' : 'Novo Produto'}
             </Text>
@@ -607,7 +607,8 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 8,
     maxHeight: '90%',
-    flexShrink: 1,
+    alignSelf: 'center',
+    width: '90%',
   },
   modalTitle: {
     marginBottom: 16,
@@ -637,16 +638,15 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   imagePreview: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },
   removeImageButton: {
     position: 'absolute',
     top: -8,
-    right: '50%',
-    marginRight: -108,
+    right: -8,
     backgroundColor: 'white',
   },
   imageButton: {
