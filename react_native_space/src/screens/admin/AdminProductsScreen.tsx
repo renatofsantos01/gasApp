@@ -406,7 +406,7 @@ export const AdminProductsScreen: React.FC = () => {
           dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 20, flexGrow: 0 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" style={{ flex: 0 }} contentContainerStyle={{ paddingBottom: 20 }}>
             <Text variant="titleLarge" style={styles.modalTitle}>
               {editingProduct ? 'Editar Produto' : 'Novo Produto'}
             </Text>
@@ -466,7 +466,15 @@ export const AdminProductsScreen: React.FC = () => {
               style={styles.input}
               mode="outlined"
               keyboardType="decimal-pad"
+            />
 
+            <TextInput
+              label="Estoque"
+              value={formData?.stock ?? ''}
+              onChangeText={(text) => setFormData({ ...formData, stock: text })}
+              style={styles.input}
+              mode="outlined"
+              keyboardType="number-pad"
             />
 
             <View style={styles.imageSection}>
@@ -500,16 +508,6 @@ export const AdminProductsScreen: React.FC = () => {
                 </Button>
               )}
             </View>
-
-            <TextInput
-              label="Estoque"
-              value={formData?.stock ?? ''}
-              onChangeText={(text) => setFormData({ ...formData, stock: text })}
-              style={styles.input}
-              mode="outlined"
-              keyboardType="number-pad"
-
-            />
 
             <View style={styles.modalActions}>
               <Button
@@ -607,8 +605,6 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 8,
     maxHeight: '90%',
-    alignSelf: 'center',
-    width: '90%',
   },
   modalTitle: {
     marginBottom: 16,
