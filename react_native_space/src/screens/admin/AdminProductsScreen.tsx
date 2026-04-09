@@ -406,7 +406,7 @@ export const AdminProductsScreen: React.FC = () => {
           dismissable={false}
           contentContainerStyle={styles.modal}
         >
-          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 0 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: 20 }}>
             <Text variant="titleLarge" style={styles.modalTitle}>
               {editingProduct ? 'Editar Produto' : 'Novo Produto'}
             </Text>
@@ -620,7 +620,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: 16,
-    paddingBottom: 20,
   },
   modalButton: {
     marginLeft: 8,
