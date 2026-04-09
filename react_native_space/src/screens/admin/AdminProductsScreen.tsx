@@ -607,6 +607,7 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 8,
     maxHeight: '90%',
+    flexShrink: 1,
   },
   modalTitle: {
     marginBottom: 16,
