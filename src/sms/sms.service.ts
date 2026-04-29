@@ -41,9 +41,11 @@ export class SmsService {
       },
     );
 
+    const body = await response.text();
+    this.logger.log(`Twilio Verify send [${response.status}] phone=${this.formatPhone(to)}: ${body}`);
+
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Twilio Verify error: ${error}`);
+      this.logger.error(`Twilio Verify send error: ${body}`);
       throw new Error('Falha ao enviar código de verificação');
     }
   }
