@@ -22,8 +22,11 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
   const [error, setError] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const didSendRef = useRef(false);
 
   useEffect(() => {
+    if (didSendRef.current) return;
+    didSendRef.current = true;
     sendCode();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
