@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Text, HelperText } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,6 +21,10 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [cooldown, setCooldown] = useState(0);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [updatingPhone, setUpdatingPhone] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const didSendRef = useRef(false);
 
@@ -76,6 +80,29 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdatePhone = async () => {
+    const digits = newPhone.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setPhoneError('Digite um número válido com DDD');
+      return;
+    }
+    setUpdatingPhone(true);
+    setPhoneError('');
+    try {
+      await apiService.updatePhone(digits);
+      await refreshUser();
+      setShowPhoneModal(false);
+      setNewPhone('');
+      setCode('');
+      didSendRef.current = false;
+      sendCode();
+    } catch (err: any) {
+      setPhoneError(err?.response?.data?.message ?? 'Erro ao atualizar número');
+    } finally {
+      setUpdatingPhone(false);
     }
   };
 
@@ -141,16 +168,7 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
 
           <Button
             mode="text"
-            onPress={() =>
-              Alert.alert(
-                'Alterar número',
-                'Para alterar o telefone, você precisa sair e fazer login novamente.',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { text: 'Sair', style: 'destructive', onPress: () => logout?.() },
-                ],
-              )
-            }
+            onPress={() => { setShowPhoneModal(true); setPhoneError(''); setNewPhone(''); }}
             style={styles.resendButton}
             textColor="#757575"
           >
@@ -158,6 +176,37 @@ export const PhoneVerificationScreen: React.FC<PhoneVerificationScreenProps> = (
           </Button>
         </View>
       </View>
+
+      <Modal visible={showPhoneModal} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPhoneModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.modalCard}>
+            <Text variant="titleMedium" style={styles.modalTitle}>Alterar número</Text>
+            <TextInput
+              label="Novo número com DDD"
+              value={newPhone}
+              onChangeText={(t) => { setNewPhone(t); setPhoneError(''); }}
+              mode="outlined"
+              keyboardType="phone-pad"
+              style={styles.modalInput}
+              error={!!phoneError}
+              autoFocus
+            />
+            {phoneError ? <HelperText type="error" visible>{phoneError}</HelperText> : null}
+            <Button
+              mode="contained"
+              onPress={handleUpdatePhone}
+              loading={updatingPhone}
+              disabled={updatingPhone}
+              style={styles.modalButton}
+            >
+              Confirmar e reenviar código
+            </Button>
+            <Button mode="text" onPress={() => setShowPhoneModal(false)} textColor="#757575">
+              Cancelar
+            </Button>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -206,5 +255,27 @@ const styles = StyleSheet.create({
   },
   resendButton: {
     alignSelf: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 24,
+    gap: 8,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  modalInput: {
+    marginBottom: 4,
+  },
+  modalButton: {
+    marginTop: 8,
   },
 });

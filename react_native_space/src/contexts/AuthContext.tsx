@@ -77,6 +77,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const token = await apiService.getToken();
       if (token) {
         const profile = await apiService.getProfile();
+        // Cadastro abandonado sem verificar — apaga e força novo cadastro
+        if (profile.phone && !profile.phoneVerified) {
+          try { await apiService.cancelRegistration(); } catch (_) {}
+          await apiService.removeToken();
+          return;
+        }
         setUser(profile);
         registerPushToken();
       }
@@ -110,9 +116,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    if (justRegistered && user && !user.phoneVerified) {
-      try { await apiService.cancelRegistration(); } catch (_) {}
-    }
     try { await apiService.logout(); } catch (_) {}
     await apiService.removeToken();
     setUser(null);

@@ -146,6 +146,10 @@ class ApiService {
     await this.api.delete('/auth/registration');
   }
 
+  async updatePhone(phone: string): Promise<void> {
+    await this.api.patch('/auth/phone', { phone });
+  }
+
   async logout(): Promise<void> {
     await this.api.post('/auth/logout');
   }
