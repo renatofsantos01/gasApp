@@ -205,22 +205,8 @@ export class AuthService {
     if (!user.phone) throw new BadRequestException('Nenhum telefone cadastrado');
     if (user.phoneverified) throw new ConflictException('Telefone já verificado');
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresat = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        phoneverificationcode: code,
-        phoneverificationexpiresat: expiresat,
-      },
-    });
-
-    // Fire and forget — retorna imediatamente sem esperar o SMS
-    this.smsService.sendSms(
-      user.phone,
-      `Seu código de verificação é: ${code}. Válido por 10 minutos.`,
-    ).catch((err) => this.logger.error(`Falha ao enviar SMS: ${err.message}`));
+    this.smsService.sendVerification(user.phone)
+      .catch((err) => this.logger.error(`Falha ao enviar verificação: ${err.message}`));
 
     return { message: 'Código enviado com sucesso' };
   }
@@ -230,14 +216,10 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Usuário não encontrado');
     if (user.phoneverified) return { message: 'Telefone já verificado' };
+    if (!user.phone) throw new BadRequestException('Nenhum telefone cadastrado');
 
-    if (!user.phoneverificationcode || user.phoneverificationcode !== code) {
-      throw new BadRequestException('Código inválido');
-    }
-
-    if (user.phoneverificationexpiresat && user.phoneverificationexpiresat < new Date()) {
-      throw new BadRequestException('Código expirado. Solicite um novo código.');
-    }
+    const approved = await this.smsService.checkVerification(user.phone, code);
+    if (!approved) throw new BadRequestException('Código inválido ou expirado');
 
     await this.prisma.user.update({
       where: { id: userId },
