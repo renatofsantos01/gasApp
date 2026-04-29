@@ -5,7 +5,7 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   async sendPasswordReset(to: string, code: string, appName: string): Promise<void> {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = process.env.SENDGRID_API_KEY;
 
     if (!apiKey) {
       this.logger.warn(`[DEV MODE] E-mail de reset para ${to} | Código: ${code}`);
@@ -29,23 +29,23 @@ export class MailService {
       </div>
     `;
 
-    const response = await fetch('https://api.resend.com/emails', {
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: fromEmail,
-        to,
+        personalizations: [{ to: [{ email: to }] }],
+        from: { email: fromEmail },
         subject: `${appName} — Código para redefinir sua senha`,
-        html,
+        content: [{ type: 'text/html', value: html }],
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      this.logger.error(`Resend error: ${error}`);
+      this.logger.error(`SendGrid error: ${error}`);
       throw new Error('Falha ao enviar e-mail');
     }
   }
