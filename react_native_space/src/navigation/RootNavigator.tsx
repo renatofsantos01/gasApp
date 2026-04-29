@@ -32,13 +32,13 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, user, tenantError } = useAuth();
+  const { isAuthenticated, isLoading, user, justRegistered, tenantError } = useAuth();
 
   if (isLoading) return <Loading />;
   if (tenantError) return <AppErrorScreen />;
 
   const needsPhoneVerification =
-    isAuthenticated && !!user?.phone && user?.phoneVerified === false;
+    isAuthenticated && justRegistered && !!user?.phone && user?.phoneVerified === false;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

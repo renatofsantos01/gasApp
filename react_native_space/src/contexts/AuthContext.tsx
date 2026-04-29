@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  justRegistered: boolean;
   tenantId: string | null;
   tenantConfig: TenantConfig | null;
   tenantError: boolean;
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [justRegistered, setJustRegistered] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tenantConfig, setTenantConfig] = useState<TenantConfig | null>(null);
   const [tenantError, setTenantError] = useState(false);
@@ -103,6 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const response = await apiService.register({ ...data, tenantId });
     await apiService.saveToken(response?.token ?? '');
     setUser(response?.user ?? null);
+    setJustRegistered(true);
     registerPushToken();
   };
 
@@ -112,6 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (_) {}
     await apiService.removeToken();
     setUser(null);
+    setJustRegistered(false);
   };
 
   const refreshUser = async () => {
@@ -129,6 +133,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isLoading,
         isAuthenticated: !!user,
+        justRegistered,
         tenantId,
         tenantConfig,
         tenantError,
