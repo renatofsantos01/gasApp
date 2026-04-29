@@ -59,7 +59,7 @@ export class SmsService {
     }
 
     const response = await fetch(
-      `https://verify.twilio.com/v2/Services/${serviceSid}/VerificationChecks`,
+      `https://verify.twilio.com/v2/Services/${serviceSid}/VerificationCheck`,
       {
         method: 'POST',
         headers: {
