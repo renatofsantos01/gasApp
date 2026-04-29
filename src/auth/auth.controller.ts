@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request, Patch, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, UseGuards, Request, Patch, HttpCode, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -44,6 +44,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Update current user profile' })
   async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.userId, dto);
+  }
+
+  @Delete('registration')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Cancel registration if phone not verified' })
+  async cancelRegistration(@Request() req: any) {
+    return this.authService.cancelRegistration(req.user.userId);
   }
 
   @Post('send-verification')

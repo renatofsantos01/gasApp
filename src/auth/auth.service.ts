@@ -55,8 +55,15 @@ export class AuthService {
       const existingPhone = await this.prisma.user.findFirst({
         where: { phone: dto.phone, tenantid: dto.tenantId },
       });
+
       if (existingPhone) {
-        throw new ConflictException('Este telefone já está cadastrado');
+        // Remove cadastro antigo não verificado (abandono de fluxo)
+        const quinzeMinutos = new Date(Date.now() - 15 * 60 * 1000);
+        if (!existingPhone.phoneverified && existingPhone.createdat < quinzeMinutos) {
+          await this.prisma.user.delete({ where: { id: existingPhone.id } });
+        } else {
+          throw new ConflictException('Este telefone já está cadastrado');
+        }
       }
     }
 
@@ -196,6 +203,13 @@ export class AuthService {
     });
 
     return { ...user, phoneVerified: user.phoneverified };
+  }
+
+  async cancelRegistration(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user && !user.phoneverified) {
+      await this.prisma.user.delete({ where: { id: userId } });
+    }
   }
 
   async sendPhoneVerification(userId: string): Promise<{ message: string }> {
