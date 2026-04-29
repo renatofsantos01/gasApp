@@ -55,6 +55,14 @@ export class AuthController {
     return this.authService.cancelRegistration(req.user.userId);
   }
 
+  @Patch('phone')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update phone number before verification' })
+  async updatePhone(@Request() req: any, @Body() body: { phone: string }) {
+    return this.authService.updatePhone(req.user.userId, body.phone);
+  }
+
   @Post('send-verification')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -212,6 +212,19 @@ export class AuthService {
     }
   }
 
+  async updatePhone(userId: string, newPhone: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('Usuário não encontrado');
+    if (user.phoneverified) throw new BadRequestException('Telefone já verificado');
+
+    const conflict = await this.prisma.user.findFirst({
+      where: { phone: newPhone, tenantid: user.tenantid, phoneverified: true },
+    });
+    if (conflict) throw new ConflictException('Este telefone já está cadastrado');
+
+    await this.prisma.user.update({ where: { id: userId }, data: { phone: newPhone } });
+  }
+
   async sendPhoneVerification(userId: string): Promise<{ message: string }> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
