@@ -205,8 +205,7 @@ export class AuthService {
     if (!user.phone) throw new BadRequestException('Nenhum telefone cadastrado');
     if (user.phoneverified) throw new ConflictException('Telefone já verificado');
 
-    this.smsService.sendVerification(user.phone)
-      .catch((err) => this.logger.error(`Falha ao enviar verificação: ${err.message}`));
+    await this.smsService.sendVerification(user.phone);
 
     return { message: 'Código enviado com sucesso' };
   }

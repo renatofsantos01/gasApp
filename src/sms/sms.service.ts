@@ -68,16 +68,17 @@ export class SmsService {
       },
     );
 
-    // 404 = código inválido, expirado ou tentativas esgotadas
+    const body = await response.text();
+    this.logger.log(`Twilio Verify check [${response.status}] phone=${this.formatPhone(to)}: ${body}`);
+
     if (response.status === 404) return false;
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Twilio Verify check error: ${error}`);
+      this.logger.error(`Twilio Verify check error: ${body}`);
       throw new Error('Falha ao verificar código');
     }
 
-    const data = await response.json() as { status: string };
+    const data = JSON.parse(body) as { status: string };
     return data.status === 'approved';
   }
 }
