@@ -142,6 +142,10 @@ class ApiService {
     await this.api.patch('/auth/push-token', { token });
   }
 
+  async cancelRegistration(): Promise<void> {
+    await this.api.delete('/auth/registration');
+  }
+
   async logout(): Promise<void> {
     await this.api.post('/auth/logout');
   }

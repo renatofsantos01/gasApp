@@ -110,9 +110,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    try {
-      await apiService.logout();
-    } catch (_) {}
+    if (justRegistered && user && !user.phoneVerified) {
+      try { await apiService.cancelRegistration(); } catch (_) {}
+    }
+    try { await apiService.logout(); } catch (_) {}
     await apiService.removeToken();
     setUser(null);
     setJustRegistered(false);
